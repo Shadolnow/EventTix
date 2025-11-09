@@ -15,6 +15,7 @@ import { TicketCard } from '@/components/TicketCard';
 
 const claimSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
+  email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
   phone: z.string().trim().min(10, "Valid phone number required").max(20)
 });
 
@@ -23,7 +24,7 @@ const PublicEvent = () => {
   const navigate = useNavigate();
   const [event, setEvent] = useState<any>(null);
   const [claimedTicket, setClaimedTicket] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const PublicEvent = () => {
           event_id: eventId,
           attendee_name: validated.name,
           attendee_phone: validated.phone,
-          attendee_email: '',
+          attendee_email: validated.email.toLowerCase(),
           ticket_code: ticketCode
         })
         .select()
@@ -296,6 +297,21 @@ const PublicEvent = () => {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="your@email.com"
+                    required
+                    maxLength={255}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    We'll send your ticket to this email
+                  </p>
+                </div>
+                <div>
                   <Label htmlFor="phone">Phone Number (with country code) *</Label>
                   <Input
                     id="phone"
@@ -305,9 +321,6 @@ const PublicEvent = () => {
                     required
                     maxLength={20}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    We'll send your ticket link to this number
-                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Claiming...' : 'Claim Free Ticket'}

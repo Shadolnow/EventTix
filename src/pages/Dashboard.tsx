@@ -125,12 +125,12 @@ const Dashboard = () => {
     setAddingAdmin(true);
 
     try {
-      // First get the user by email using admin API
-      const { data: { users: foundUsers }, error: searchError } = await supabase.auth.admin.listUsers();
+      // Call secure edge function to list users
+      const { data: response, error: searchError } = await supabase.functions.invoke('admin-list-users');
       
       if (searchError) throw searchError;
 
-      const targetUser = foundUsers?.find((u: any) => u.email === newAdminEmail);
+      const targetUser = response?.users?.find((u: any) => u.email === newAdminEmail);
 
       if (!targetUser) {
         toast({
