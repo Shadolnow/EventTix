@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, MapPin, Ticket, QrCode, Share2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Ticket, QrCode, Share2, ExternalLink, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -114,17 +114,25 @@ const Events = () => {
                   </Button>
                 </div>
 
-                <div className="flex gap-2">
-                  <Link to={`/event/${event.id}/tickets`} className="flex-1">
-                    <Button variant="default" className="w-full">
-                      <Ticket className="w-4 h-4 mr-2" />
-                      Manage Tickets
-                    </Button>
-                  </Link>
-                  <Link to={`/e/${event.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full">
-                      <QrCode className="w-4 h-4 mr-2" />
-                      View Public Page
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Link to={`/event/${event.id}/tickets`} className="flex-1">
+                      <Button variant="default" className="w-full">
+                        <Ticket className="w-4 h-4 mr-2" />
+                        Tickets
+                      </Button>
+                    </Link>
+                    <Link to={`/e/${event.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        <QrCode className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                  <Link to={`/event/${event.id}/customize`} className="w-full block">
+                    <Button variant="secondary" className="w-full">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Customize Event Page
                     </Button>
                   </Link>
                 </div>

@@ -15,6 +15,7 @@ import TicketViewer from "./pages/TicketViewer";
 import PublicEvent from "./pages/PublicEvent";
 import PublicEvents from "./pages/PublicEvents";
 import Dashboard from "./pages/Dashboard";
+import EventCustomizationPage from "./pages/EventCustomizationPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/events" element={<Events />} />
             <Route path="/event/:eventId/tickets" element={<TicketManagement />} />
+            <Route path="/event/:eventId/customize" element={<EventCustomizationPage />} />
             <Route path="/ticket/:ticketId" element={<TicketViewer />} />
             <Route path="/e/:eventId" element={<PublicEvent />} />
             <Route path="/public-events" element={<PublicEvents />} />
