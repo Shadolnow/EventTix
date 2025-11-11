@@ -112,7 +112,9 @@ const PublicEvent = () => {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to claim ticket');
+        console.error('Ticket claim failed:', error);
+        const msg = (error && (error.message || error.hint || error.details)) || 'Failed to claim ticket';
+        toast.error(msg);
       }
     } finally {
       setLoading(false);
