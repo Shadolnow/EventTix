@@ -61,12 +61,13 @@ const Events = () => {
                 >
                   Copy Link
                 </Button>
-                <Link to="/public-events">
-                  <Button variant="default">
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Public Page
-                  </Button>
-                </Link>
+                <Button 
+                  variant="default"
+                  onClick={() => navigate('/public-events')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Public Page
+                </Button>
               </div>
             </div>
           </CardContent>
