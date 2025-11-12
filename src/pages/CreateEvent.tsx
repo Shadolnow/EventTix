@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft } from 'lucide-react';
 
 const CreateEvent = () => {
@@ -95,7 +96,8 @@ const CreateEvent = () => {
       toast.success('Event created successfully!');
       navigate('/events');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create event');
+      console.error('Create event error:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setIsLoading(false);
     }

@@ -6,6 +6,7 @@ import { EventCustomization } from '@/components/EventCustomization';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 
 const EventCustomizationPage = () => {
   const { eventId } = useParams();
@@ -42,7 +43,8 @@ const EventCustomizationPage = () => {
       
       setEvent(data);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to load event');
+      console.error('Load event error:', error);
+      toast.error(getUserFriendlyError(error));
       navigate('/events');
     } finally {
       setLoading(false);

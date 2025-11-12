@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -52,7 +53,8 @@ const Auth = () => {
       });
       setIsForgotPassword(false);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      console.error('Password reset error:', error);
+      toast({ variant: 'destructive', title: 'Error', description: getUserFriendlyError(error) });
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,8 @@ const Auth = () => {
         navigate('/');
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      console.error('Authentication error:', error);
+      toast({ variant: 'destructive', title: 'Error', description: getUserFriendlyError(error) });
     } finally {
       setLoading(false);
     }
