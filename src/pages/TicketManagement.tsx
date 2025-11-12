@@ -12,6 +12,7 @@ import { AttendeeList } from '@/components/AttendeeList';
 import { EventStats } from '@/components/EventStats';
 import { EventCustomization } from '@/components/EventCustomization';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings } from 'lucide-react';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -136,7 +137,8 @@ const TicketManagement = () => {
       setFormData({ name: '', email: '', phone: '' });
       setIsDialogOpen(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate ticket');
+      console.error('Generate ticket error:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setIsLoading(false);
     }
