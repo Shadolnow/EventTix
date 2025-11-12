@@ -5,6 +5,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft, Shield, Edit, Trash2, ExternalLink } from 'lucide-react';
 import {
   Table,
