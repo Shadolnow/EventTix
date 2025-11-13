@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { TicketCard } from '@/components/TicketCard';
 import { downloadICS } from '@/utils/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import html2canvas from 'html2canvas';
 
 const claimSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -28,6 +29,7 @@ const PublicEvent = () => {
   const [claimedTicket, setClaimedTicket] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -132,8 +134,68 @@ const PublicEvent = () => {
     }
   };
 
-  const handleDownload = () => {
-    toast.info('To save your ticket, take a screenshot or use the share options below');
+  const handleDownload = async (format: 'png' | 'jpg' | 'pdf' = 'png') => {
+    const ticketElement = document.getElementById('ticket-card');
+    if (!ticketElement) {
+      toast.error('Ticket not found');
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      toast.info('Generating ticket image...', { duration: 2000 });
+      
+      // Wait for animations to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(ticketElement, {
+        backgroundColor: format === 'jpg' ? '#0a0f1c' : null,
+        scale: 3,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      });
+      
+      if (format === 'pdf') {
+        // For PDF, we'll use jsPDF
+        const { default: jsPDF } = await import('jspdf');
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`ticket-${claimedTicket.ticket_code}.pdf`);
+        toast.success('Ticket downloaded as PDF!');
+      } else {
+        // Convert to blob for PNG/JPG
+        const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            throw new Error('Failed to generate image');
+          }
+          
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `ticket-${claimedTicket.ticket_code}.${format}`;
+          link.href = url;
+          link.click();
+          
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+          
+          toast.success(`Ticket downloaded as ${format.toUpperCase()}!`);
+        }, mimeType, 1.0);
+      }
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Download failed. Please take a screenshot instead.', {
+        description: 'On mobile: Long press the ticket and select "Save Image"'
+      });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleAddToCalendar = () => {
@@ -411,27 +473,68 @@ const PublicEvent = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Your Ticket</CardTitle>
+                <CardDescription>
+                  Download your ticket or share it on social media
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <TicketCard ticket={claimedTicket} />
+              <CardContent className="space-y-6">
+                <div id="ticket-card">
+                  <TicketCard ticket={claimedTicket} />
+                </div>
                 
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleDownload} className="flex-1">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Download Ticket</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleDownload('png')}
+                      disabled={downloading}
+                      className="flex-1"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      PNG
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleDownload('jpg')}
+                      disabled={downloading}
+                      className="flex-1"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      JPG
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleDownload('pdf')}
+                      disabled={downloading}
+                      className="flex-1"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      PDF
+                    </Button>
+                  </div>
+                  {downloading && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Generating your ticket...
+                    </p>
+                  )}
                 </div>
 
-                <SocialShare 
-                  url={`${window.location.origin}/ticket/${claimedTicket.id}`}
-                  title={`Ticket for ${event.title}`}
-                  description="Check out my event ticket!"
-                  compact
-                />
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Share Ticket</h3>
+                  <SocialShare 
+                    url={`${window.location.origin}/ticket/${claimedTicket.id}`}
+                    title={`My ticket for ${event.title}`}
+                    description={`I'm attending ${event.title} on ${format(new Date(event.event_date), 'PPP')}. Check out my ticket!`}
+                  />
+                </div>
                 
-                <p className="text-sm text-muted-foreground text-center">
-                  Please present this ticket at entry
-                </p>
+                <Alert>
+                  <Ticket className="h-4 w-4" />
+                  <AlertDescription>
+                    Please present this ticket at the event entrance for validation.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </div>
