@@ -9,7 +9,6 @@ const corsHeaders = {
 type ClaimBody = {
   eventId: string;
   name: string;
-  email: string;
   phone: string;
 };
 
@@ -27,17 +26,19 @@ serve(async (req) => {
 
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
     const body = (await req.json()) as ClaimBody;
-    const { eventId, name, email, phone } = body;
+    const { eventId, name, phone } = body;
 
     // Basic input validation
-    if (!eventId || !name || !email || !phone) {
+    if (!eventId || !name || !phone) {
       return new Response(
         JSON.stringify({ error: 'missing_fields', message: 'Required fields are missing.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedPhone = phone.trim();
+    // Generate email from phone for database compatibility
+    const generatedEmail = `${normalizedPhone.replace(/[^0-9]/g, '')}@inhouse.local`;
     const now = new Date();
     const windowStart = new Date(now.getTime() - 30_000); // 30s cooldown per IP
 
@@ -71,16 +72,16 @@ serve(async (req) => {
       );
     }
 
-    // Enforce one ticket per email per event
+    // Enforce one ticket per phone per event
     const { data: existing } = await supabase
       .from('tickets')
       .select('id')
       .eq('event_id', eventId)
-      .eq('attendee_email', normalizedEmail)
+      .eq('attendee_phone', normalizedPhone)
       .limit(1);
     if (existing && existing.length > 0) {
       return new Response(
-        JSON.stringify({ error: 'duplicate_email', message: 'A ticket for this email has already been issued for this event.' }),
+        JSON.stringify({ error: 'duplicate_phone', message: 'A ticket for this phone number has already been issued for this event.' }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -95,8 +96,8 @@ serve(async (req) => {
       .insert({
         event_id: eventId,
         attendee_name: name.trim(),
-        attendee_phone: phone.trim(),
-        attendee_email: normalizedEmail,
+        attendee_phone: normalizedPhone,
+        attendee_email: generatedEmail,
         ticket_code: ticketCode,
       })
       .select('*, events(*)')
@@ -113,7 +114,7 @@ serve(async (req) => {
     // Log claim
     await supabase.from('ticket_claim_logs').insert({
       event_id: eventId,
-      email: normalizedEmail,
+      email: generatedEmail,
       ip_address: ip,
     });
 

@@ -31,7 +31,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/events" element={<Events />} />
             <Route path="/event/:eventId/tickets" element={<TicketManagement />} />
@@ -39,7 +38,7 @@ const App = () => (
             <Route path="/ticket/:ticketId" element={<TicketViewer />} />
             <Route path="/e/:eventId" element={<PublicEvent />} />
             <Route path="/public-events" element={<PublicEvents />} />
-            <Route path="/scan" element={<AuthRoute><Scan /></AuthRoute>} />
+            <Route path="/scan" element={<Scan />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin/events" element={<AdminEvents />} />

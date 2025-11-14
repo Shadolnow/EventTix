@@ -11,34 +11,35 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const PUBLIC_BASE_URL = (import.meta as any).env?.VITE_PUBLIC_SITE_URL || window.location.origin;
   const qrRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-    } else {
-      checkAdminStatus();
-    }
-  }, [user, navigate]);
+    checkAdminStatus();
+  }, []);
 
   const checkAdminStatus = async () => {
-    if (!user) return;
     try {
-      const { data } = await supabase.rpc('has_role', {
-        _user_id: user.id,
-        _role: 'admin',
-      });
-      setIsAdmin(data || false);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin',
+        });
+        setIsAdmin(data || false);
+      }
     } catch (error) {
       console.error('Error checking admin status:', error);
     }
   };
 
-  if (!user) return null;
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success('Signed out successfully');
+    navigate('/public-events');
+  };
 
   return (
     <div className="min-h-screen">
@@ -69,7 +70,7 @@ const Index = () => {
                 <QrCode className="w-4 h-4" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => signOut()}>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
               <LogOut className="w-4 h-4" />
             </Button>
           </nav>

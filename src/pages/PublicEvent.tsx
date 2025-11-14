@@ -18,7 +18,6 @@ import html2canvas from 'html2canvas';
 
 const claimSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
-  email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
   phone: z.string().trim().min(10, "Valid phone number required").max(20)
 });
 
@@ -27,7 +26,7 @@ const PublicEvent = () => {
   const navigate = useNavigate();
   const [event, setEvent] = useState<any>(null);
   const [claimedTicket, setClaimedTicket] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -71,12 +70,11 @@ const PublicEvent = () => {
       }
       
       setLoading(true);
-      // Call secure Edge Function that enforces rate limiting and per-email constraints
+      // Call secure Edge Function that enforces rate limiting
       const { data, error } = await (supabase as any).functions.invoke('public-claim-ticket', {
         body: {
           eventId,
           name: validated.name,
-          email: validated.email.toLowerCase(),
           phone: validated.phone,
         },
       });
@@ -437,33 +435,20 @@ const PublicEvent = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="your@email.com"
-                    required
-                    maxLength={255}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    We'll send your ticket to this email
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number (with country code) *</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+1234567890"
                     required
+                    minLength={10}
                     maxLength={20}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Claiming...' : 'Claim Free Ticket'}
+                  {loading ? 'Claiming...' : 'Get Free Ticket'}
                 </Button>
               </form>
             </CardContent>
