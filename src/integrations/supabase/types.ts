@@ -157,6 +157,38 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_claim_logs: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_claim_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           attendee_email: string
