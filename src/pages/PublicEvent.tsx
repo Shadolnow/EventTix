@@ -35,7 +35,6 @@ const PublicEvent = () => {
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
 
   useEffect(() => {
     if (!eventId) return;
@@ -61,6 +60,7 @@ const PublicEvent = () => {
 
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const validated = claimSchema.parse(formData);
@@ -72,39 +72,64 @@ const PublicEvent = () => {
 
         if (!availabilityData) {
           toast.error('Sorry, this event is sold out!');
+          setLoading(false);
           return;
         }
       }
 
-      // Simulate sending OTP
-      const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(mockOtp);
-      setShowOtpInput(true);
-
-      // In a real app, this would call an API to send SMS
-      console.log("Generated OTP:", mockOtp);
-      toast.success(`OTP sent to ${validated.phone}`, {
-        description: `(Simulated OTP: ${mockOtp})`,
-        duration: 10000,
+      // Send real OTP via Supabase Auth
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: validated.phone,
       });
+
+      if (error) {
+        // Handle case where Phone Auth is not enabled
+        if (error.message.includes("Signups not allowed for this instance") || error.message.includes("provider is not enabled")) {
+          toast.error("SMS Provider not configured in Supabase. Please contact admin.");
+          console.error("Supabase Phone Auth Error:", error);
+        } else {
+          toast.error(error.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      setShowOtpInput(true);
+      toast.success(`OTP sent to ${validated.phone}`);
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to initiate verification');
+        toast.error('Failed to send OTP. Please check the number.');
+        console.error(error);
       }
+      setLoading(false);
     }
   };
 
   const verifyAndClaim = async () => {
-    if (otp !== generatedOtp) {
-      toast.error("Invalid OTP. Please try again.");
-      return;
-    }
-
     setLoading(true);
     try {
+      // Verify OTP
+      const { data: { session }, error: verifyError } = await supabase.auth.verifyOtp({
+        phone: formData.phone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (verifyError) {
+        toast.error(verifyError.message || "Invalid OTP");
+        setLoading(false);
+        return;
+      }
+
+      if (!session) {
+        toast.error("Verification failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       // Generate ticket code
       const ticketCode = `${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
@@ -144,7 +169,8 @@ const PublicEvent = () => {
       }
 
     } catch (error: any) {
-      toast.error('Failed to claim ticket');
+      console.error("Claim Error:", error);
+      toast.error('Failed to claim ticket: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -467,7 +493,7 @@ const PublicEvent = () => {
                   </div>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    Didn't receive code? <button className="text-primary hover:underline" onClick={() => toast.info("Resending OTP... (Simulated)")}>Resend</button>
+                    Didn't receive code? <button className="text-primary hover:underline" onClick={() => toast.info("Please request a new code by going back.")}>Resend</button>
                   </p>
                 </div>
               )}
