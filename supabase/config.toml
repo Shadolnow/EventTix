@@ -1,7 +1,13 @@
-project_id = "dmksigdpcbdvyejtedju"
+project_id = "vieaezhcsugfqvkgnuhm"
 
 [functions.admin-list-users]
 verify_jwt = true
 
 [functions.admin-manage-users]
 verify_jwt = true
+
+[functions.update-admin-password]
+verify_jwt = true
+
+[functions.public-claim-ticket]
+verify_jwt = false

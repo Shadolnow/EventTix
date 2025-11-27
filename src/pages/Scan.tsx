@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ArrowLeft, Camera, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Html5Qrcode } from 'html5-qrcode';
+import { useAuth } from '@/components/AuthProvider';
 
 const Scan = () => {
   const navigate = useNavigate();
@@ -13,14 +14,21 @@ const Scan = () => {
   const [lastScan, setLastScan] = useState<any>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraError, setCameraError] = useState('');
+  const { user } = useAuth();
 
   useEffect(() => {
+    // Require authentication to access scanner
+    if (!user) {
+      toast.error('Please sign in to access the scanner');
+      navigate('/auth');
+      return;
+    }
     return () => {
       if (scannerRef.current?.isScanning) {
         scannerRef.current.stop().catch(console.error);
       }
     };
-  }, []);
+  }, [user, navigate]);
 
   const playSuccessSound = () => {
     const audioContext = new AudioContext();
@@ -71,6 +79,12 @@ const Scan = () => {
     }
 
     try {
+      if (!user) {
+        playErrorSound();
+        toast.error('Authentication required');
+        setLastScan({ success: false, message: 'Not signed in', code: ticketCode });
+        return;
+      }
       const { data: ticket, error } = await (supabase as any)
         .from('tickets')
         .select('*, events(*)')
@@ -86,6 +100,18 @@ const Scan = () => {
           duration: 3000,
         });
         setLastScan({ success: false, message: 'Invalid ticket', code: ticketCode });
+        return;
+      }
+
+      // Authorization: ensure scanner owns the event
+      const isOwner = ticketTyped?.events?.user_id === user.id;
+      if (!isOwner) {
+        playErrorSound();
+        toast.error('Unauthorized', {
+          description: 'You can only validate tickets for your own events.',
+          duration: 3000,
+        });
+        setLastScan({ success: false, message: 'Unauthorized to validate this event', ticket: ticketTyped });
         return;
       }
 
@@ -125,8 +151,12 @@ const Scan = () => {
       });
 
     } catch (error: any) {
+      console.error('Ticket validation error', error);
       playErrorSound();
-      toast.error(error.message || 'Validation failed');
+      // Do not expose database internals to the user
+      toast.error('Validation failed', {
+        description: 'Please try again or contact support.',
+      });
       setLastScan({ success: false, message: 'Validation error', code: ticketCode });
     }
   };

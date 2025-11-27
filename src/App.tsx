@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminEvents from "./pages/AdminEvents";
 import EventCustomizationPage from "./pages/EventCustomizationPage";
 import NotFound from "./pages/NotFound";
+import AuthRoute from "@/components/RouteGuards/AuthRoute";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +31,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/events" element={<Events />} />
             <Route path="/event/:eventId/tickets" element={<TicketManagement />} />

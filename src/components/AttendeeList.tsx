@@ -4,50 +4,96 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Download, CheckCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 interface AttendeeListProps {
   tickets: any[];
   eventTitle: string;
+  eventId: string;
 }
 
-export const AttendeeList = ({ tickets, eventTitle }: AttendeeListProps) => {
-  const downloadCSV = () => {
+export const AttendeeList = ({ tickets, eventTitle, eventId }: AttendeeListProps) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const downloadCSV = async () => {
     if (tickets.length === 0) {
       toast.error('No attendees to download');
       return;
     }
 
-    // Create CSV content
-    const headers = ['Name', 'Email', 'Phone', 'Ticket Code', 'Status', 'Validated At', 'Created At'];
-    const rows = tickets.map(ticket => [
-      ticket.attendee_name,
-      ticket.attendee_email,
-      ticket.attendee_phone || 'N/A',
-      ticket.ticket_code,
-      ticket.is_validated ? 'Validated' : 'Pending',
-      ticket.validated_at ? format(new Date(ticket.validated_at), 'PPpp') : 'N/A',
-      format(new Date(ticket.created_at), 'PPpp')
-    ]);
+    setIsExporting(true);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+    try {
+      // Call edge function for secure export with audit logging
+      const { data: authData } = await supabase.auth.getSession();
+      
+      if (!authData.session) {
+        toast.error('You must be signed in to export data');
+        setIsExporting(false);
+        return;
+      }
 
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${eventTitle.replace(/\s+/g, '_')}_attendees_${Date.now()}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const { data, error } = await supabase.functions.invoke('export-attendees', {
+        body: { eventId, eventTitle },
+      });
 
-    toast.success('Attendee list downloaded!');
+      if (error) {
+        console.error('Export error:', error);
+        if (error.message?.includes('Rate limit')) {
+          toast.error('Rate limit exceeded. Please wait before exporting again.');
+        } else if (error.message?.includes('permission')) {
+          toast.error('You do not have permission to export this data');
+        } else {
+          toast.error('Failed to export attendee list. Please try again.');
+        }
+        setIsExporting(false);
+        return;
+      }
+
+      if (!data?.tickets) {
+        toast.error('No data received from server');
+        setIsExporting(false);
+        return;
+      }
+
+      // Create CSV content from server response
+      const headers = ['Name', 'Email', 'Phone', 'Ticket Code', 'Status', 'Validated At', 'Created At'];
+      const rows = data.tickets.map((ticket: any) => [
+        ticket.attendee_name,
+        ticket.attendee_email,
+        ticket.attendee_phone || 'N/A',
+        ticket.ticket_code,
+        ticket.is_validated ? 'Validated' : 'Pending',
+        ticket.validated_at ? format(new Date(ticket.validated_at), 'PPpp') : 'N/A',
+        format(new Date(ticket.created_at), 'PPpp')
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row: string[]) => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${eventTitle.replace(/\s+/g, '_')}_attendees_${Date.now()}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Attendee list exported and logged successfully!');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to export attendee list');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -58,9 +104,9 @@ export const AttendeeList = ({ tickets, eventTitle }: AttendeeListProps) => {
             <CardTitle>Attendee List</CardTitle>
             <CardDescription>All registered attendees for this event</CardDescription>
           </div>
-          <Button variant="outline" onClick={downloadCSV}>
+          <Button variant="outline" onClick={downloadCSV} disabled={isExporting}>
             <Download className="w-4 h-4 mr-2" />
-            Download CSV
+            {isExporting ? 'Exporting...' : 'Download CSV'}
           </Button>
         </div>
       </CardHeader>

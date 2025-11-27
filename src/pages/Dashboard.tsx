@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft, UserPlus, Shield, Trash2, Calendar, UserX } from 'lucide-react';
 import {
   Select,
@@ -98,10 +99,11 @@ const Dashboard = () => {
       setIsAdmin(true);
       await loadUsers();
     } catch (error: any) {
+      console.error('Admin check error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
       navigate('/');
     } finally {
@@ -145,10 +147,11 @@ const Dashboard = () => {
         setProfiles(profilesMap);
       }
     } catch (error: any) {
+      console.error('Load users error:', error);
       toast({
         variant: 'destructive',
         title: 'Error loading users',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };
@@ -196,10 +199,11 @@ const Dashboard = () => {
       setNewAdminEmail('');
       await loadUsers();
     } catch (error: any) {
+      console.error('Add admin error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     } finally {
       setAddingAdmin(false);
@@ -208,6 +212,27 @@ const Dashboard = () => {
 
   const handleChangeRole = async (userId: string, newRole: string) => {
     try {
+      // Get current role
+      const currentRole = userRoles.find((r) => r.user_id === userId)?.role || 'user';
+      const isDemotingAdmin = currentRole === 'admin' && newRole !== 'admin';
+
+      // Check if this is the last admin
+      if (isDemotingAdmin) {
+        const { count } = await supabase
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'admin');
+
+        if (count && count <= 1) {
+          toast({
+            variant: 'destructive',
+            title: 'Cannot remove last admin',
+            description: 'You must promote another admin before removing this role.',
+          });
+          return;
+        }
+      }
+
       // Remove existing roles
       await supabase.from('user_roles').delete().eq('user_id', userId);
 
@@ -228,16 +253,35 @@ const Dashboard = () => {
 
       await loadUsers();
     } catch (error: any) {
+      console.error('Change role error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };
 
   const handleDeleteUser = async (userId: string, email: string) => {
     try {
+      // Check if deleting the last admin
+      const targetUserRole = userRoles.find((r) => r.user_id === userId);
+      if (targetUserRole?.role === 'admin') {
+        const { count } = await supabase
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'admin');
+
+        if (count && count <= 1) {
+          toast({
+            variant: 'destructive',
+            title: 'Cannot delete last admin',
+            description: 'You must create another admin before deleting this account.',
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase.functions.invoke('admin-manage-users', {
         body: { action: 'delete', userId }
       });
@@ -251,10 +295,11 @@ const Dashboard = () => {
 
       await loadUsers();
     } catch (error: any) {
+      console.error('Delete user error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };

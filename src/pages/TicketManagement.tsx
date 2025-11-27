@@ -12,6 +12,7 @@ import { AttendeeList } from '@/components/AttendeeList';
 import { EventStats } from '@/components/EventStats';
 import { EventCustomization } from '@/components/EventCustomization';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings } from 'lucide-react';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -107,8 +108,8 @@ const TicketManagement = () => {
 
     setIsLoading(true);
     try {
-      // Generate unique ticket code
-      const ticketCode = `${eventId?.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      // Generate cryptographically secure ticket code
+      const ticketCode = `${crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 8).toUpperCase()}`;
 
       const { data: ticketData, error } = await (supabase as any).from('tickets').insert({
         event_id: eventId,
@@ -136,7 +137,8 @@ const TicketManagement = () => {
       setFormData({ name: '', email: '', phone: '' });
       setIsDialogOpen(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate ticket');
+      console.error('Generate ticket error:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setIsLoading(false);
     }
@@ -280,7 +282,7 @@ const TicketManagement = () => {
             </TabsContent>
 
               <TabsContent value="attendees">
-                <AttendeeList tickets={tickets} eventTitle={event.title} />
+                <AttendeeList tickets={tickets} eventTitle={event.title} eventId={eventId!} />
               </TabsContent>
 
               <TabsContent value="customize">

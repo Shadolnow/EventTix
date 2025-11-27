@@ -73,6 +73,41 @@ serve(async (req) => {
     }
 
     if (action === 'delete') {
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: 'userId is required for delete action' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Prevent self-deletion
+      if (userId === user.id) {
+        return new Response(
+          JSON.stringify({ error: 'Cannot delete your own account' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if target user is the last admin
+      const { data: targetUserRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (targetUserRoles?.some(r => r.role === 'admin')) {
+        const { count } = await supabaseAdmin
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'admin');
+
+        if (count && count <= 1) {
+          return new Response(
+            JSON.stringify({ error: 'Cannot delete the last admin account' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
       // Delete user account
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       
