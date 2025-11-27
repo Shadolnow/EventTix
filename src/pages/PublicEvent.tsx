@@ -77,31 +77,28 @@ const PublicEvent = () => {
         }
       }
 
-      // Send real OTP via Supabase Auth
+      // Send real OTP via Supabase Auth (Email)
       const { error } = await supabase.auth.signInWithOtp({
-        phone: validated.phone,
+        email: validated.email,
+        options: {
+          shouldCreateUser: true,
+        }
       });
 
       if (error) {
-        // Handle case where Phone Auth is not enabled
-        if (error.message.includes("Signups not allowed for this instance") || error.message.includes("provider is not enabled")) {
-          toast.error("SMS Provider not configured in Supabase. Please contact admin.");
-          console.error("Supabase Phone Auth Error:", error);
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message);
         setLoading(false);
         return;
       }
 
       setShowOtpInput(true);
-      toast.success(`OTP sent to ${validated.phone}`);
+      toast.success(`OTP sent to ${validated.email}`);
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to send OTP. Please check the number.');
+        toast.error('Failed to send OTP. Please check your email.');
         console.error(error);
       }
       setLoading(false);
@@ -111,11 +108,11 @@ const PublicEvent = () => {
   const verifyAndClaim = async () => {
     setLoading(true);
     try {
-      // Verify OTP
+      // Verify OTP (Email)
       const { data: { session }, error: verifyError } = await supabase.auth.verifyOtp({
-        phone: formData.phone,
+        email: formData.email,
         token: otp,
-        type: 'sms',
+        type: 'email',
       });
 
       if (verifyError) {
@@ -452,9 +449,9 @@ const PublicEvent = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                    <h3 className="font-semibold text-lg">Verify Phone Number</h3>
+                    <h3 className="font-semibold text-lg">Verify Email Address</h3>
                     <p className="text-sm text-muted-foreground">
-                      Enter the 6-digit code sent to {formData.phone}
+                      Enter the 6-digit code sent to {formData.email}
                     </p>
                   </div>
 
@@ -498,9 +495,9 @@ const PublicEvent = () => {
                       className="text-primary hover:underline disabled:opacity-50"
                       onClick={async () => {
                         toast.info("Resending code...");
-                        const { error } = await supabase.auth.signInWithOtp({ phone: formData.phone });
+                        const { error } = await supabase.auth.signInWithOtp({ email: formData.email });
                         if (error) toast.error(error.message);
-                        else toast.success("Code resent!");
+                        else toast.success("Code resent to email!");
                       }}
                     >
                       Resend
