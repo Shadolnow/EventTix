@@ -1,5 +1,20 @@
 export const getUserFriendlyError = (error: any): string => {
-  // Authentication errors
+  // Authentication errors - User already exists
+  if (error?.message?.includes('User already registered') || error?.code === 'user_already_exists') {
+    return 'This email is already registered. Please sign in instead or use "Forgot password" to reset your password.';
+  }
+  
+  // Authentication errors - Invalid credentials
+  if (error?.message?.includes('Invalid login credentials') || error?.message?.includes('Invalid email or password')) {
+    return 'Invalid email or password. Please check your credentials and try again.';
+  }
+  
+  // Authentication errors - Email not confirmed
+  if (error?.message?.includes('Email not confirmed')) {
+    return 'Please verify your email address. Check your inbox for the confirmation link.';
+  }
+  
+  // Authentication errors - JWT/Token
   if (error?.message?.includes('JWT') || error?.message?.includes('token')) {
     return 'Session expired. Please sign in again.';
   }
@@ -18,6 +33,10 @@ export const getUserFriendlyError = (error: any): string => {
     return 'Network error. Please check your connection.';
   }
   
-  // Generic fallback
+  // Generic fallback with actual error message if available
+  if (error?.message) {
+    return error.message;
+  }
+  
   return 'An unexpected error occurred. Please try again or contact support.';
 };

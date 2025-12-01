@@ -32,17 +32,20 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/create-event" element={<CreateEvent />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/event/:eventId/tickets" element={<TicketManagement />} />
-            <Route path="/event/:eventId/customize" element={<EventCustomizationPage />} />
-            <Route path="/ticket/:ticketId" element={<TicketViewer />} />
             <Route path="/e/:eventId" element={<PublicEvent />} />
             <Route path="/public-events" element={<PublicEvents />} />
-            <Route path="/scan" element={<Scan />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin/events" element={<AdminEvents />} />
+            <Route path="/ticket/:ticketId" element={<TicketViewer />} />
+            
+            {/* Protected Routes */}
+            <Route path="/create-event" element={<AuthRoute><CreateEvent /></AuthRoute>} />
+            <Route path="/events" element={<AuthRoute><Events /></AuthRoute>} />
+            <Route path="/event/:eventId/tickets" element={<AuthRoute><TicketManagement /></AuthRoute>} />
+            <Route path="/event/:eventId/customize" element={<AuthRoute><EventCustomizationPage /></AuthRoute>} />
+            <Route path="/scan" element={<AuthRoute><Scan /></AuthRoute>} />
+            <Route path="/attendance" element={<AuthRoute><Attendance /></AuthRoute>} />
+            <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
+            <Route path="/admin/events" element={<AuthRoute><AdminEvents /></AuthRoute>} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

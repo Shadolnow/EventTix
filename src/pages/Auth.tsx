@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { getUserFriendlyError } from '@/lib/errorHandler';
+import { useAuth } from '@/components/AuthProvider';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -26,6 +27,14 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,16 +94,26 @@ const Auth = () => {
       }
 
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+          email: email.trim(), 
+          password 
+        });
+        
         if (error) throw error;
-        toast({ title: 'Welcome back!', description: 'You have successfully logged in.' });
-        navigate('/');
+        
+        if (data.user) {
+          toast({ 
+            title: 'Welcome back!', 
+            description: 'You have successfully logged in.' 
+          });
+          navigate('/dashboard');
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               account_type: accountType,
               company_name: accountType === 'company' ? companyName : null,
@@ -102,13 +121,45 @@ const Auth = () => {
             },
           },
         });
+        
         if (error) throw error;
-        toast({ title: 'Account created!', description: 'Please check your email to verify your account.' });
-        navigate('/');
+        
+        if (data.user) {
+          // Check if email confirmation is required
+          if (data.session) {
+            toast({ 
+              title: 'Account created!', 
+              description: 'Your account has been created successfully.' 
+            });
+            navigate('/dashboard');
+          } else {
+            toast({ 
+              title: 'Account created!', 
+              description: 'Please check your email to verify your account before signing in.' 
+            });
+            setIsLogin(true); // Switch to login mode
+          }
+        }
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
-      toast({ variant: 'destructive', title: 'Error', description: getUserFriendlyError(error) });
+      const errorMessage = getUserFriendlyError(error);
+      
+      // If user already exists, suggest switching to login
+      if (error?.message?.includes('User already registered')) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Account Already Exists', 
+          description: errorMessage 
+        });
+        setIsLogin(true); // Auto-switch to login mode
+      } else {
+        toast({ 
+          variant: 'destructive', 
+          title: isLogin ? 'Login Failed' : 'Signup Failed', 
+          description: errorMessage 
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -120,7 +171,11 @@ const Auth = () => {
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-gradient-cyber">EventTix</h1>
           <p className="text-muted-foreground">
-            {isForgotPassword ? 'Reset your password' : isLogin ? 'Sign in to your account' : 'Create your account'}
+            {isForgotPassword 
+              ? 'Reset your password' 
+              : isLogin 
+                ? 'Welcome back! Sign in to continue' 
+                : 'Create your account to get started'}
           </p>
         </div>
         <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4">
