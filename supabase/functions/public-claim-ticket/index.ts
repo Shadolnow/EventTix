@@ -118,6 +118,34 @@ serve(async (req) => {
       ip_address: ip,
     });
 
+    // Send ticket confirmation email
+    try {
+      const ticketUrl = `${req.headers.get('origin') || 'https://app.example.com'}/ticket/${ticket.id}`;
+      const eventDate = new Date(ticket.events.event_date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      await supabase.functions.invoke('send-ticket-email', {
+        body: {
+          to: generatedEmail,
+          ticketCode: ticketCode,
+          attendeeName: name.trim(),
+          eventTitle: ticket.events.title,
+          eventDate: eventDate,
+          eventVenue: ticket.events.venue,
+          ticketUrl: ticketUrl,
+        },
+      });
+      
+      console.log('Ticket confirmation email sent to:', generatedEmail);
+    } catch (emailError) {
+      // Log error but don't fail the ticket creation
+      console.error('Failed to send ticket email:', emailError);
+    }
+
     return new Response(
       JSON.stringify({ ticket }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
