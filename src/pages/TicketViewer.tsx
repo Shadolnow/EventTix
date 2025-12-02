@@ -107,22 +107,56 @@ const TicketViewer = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
-    const text = `My ticket for ${ticket.events.title}`;
-    
-    if (navigator.share) {
-      try {
+    const ticketElement = document.getElementById('ticket-card');
+    if (!ticketElement) return;
+
+    try {
+      // Generate image for sharing
+      const canvas = await html2canvas(ticketElement, {
+        backgroundColor: '#0a0f1c',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      // Convert to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob!), 'image/png', 1.0);
+      });
+
+      const file = new File([blob], `ticket-${ticket.ticket_code}.png`, { type: 'image/png' });
+      const url = window.location.href;
+      const text = `🎫 My ticket for ${ticket.events.title}`;
+
+      // Try native share with image
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `Ticket: ${ticket.events.title}`,
+          text,
+          files: [file],
+          url
+        });
+      } else if (navigator.share) {
+        // Fallback to sharing without image
         await navigator.share({
           title: `Ticket: ${ticket.events.title}`,
           text,
           url
         });
-      } catch (error) {
-        // User cancelled
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        toast.success('Link copied to clipboard!');
       }
-    } else {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      toast.success('Link copied to clipboard!');
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (error.name !== 'AbortError') {
+        console.error('Share error:', error);
+        const url = window.location.href;
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+      }
     }
   };
 
@@ -190,7 +224,25 @@ const TicketViewer = () => {
             <CardContent className="pt-6 space-y-4">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold mb-1">Share Your Ticket</h3>
-                <p className="text-sm text-muted-foreground">Let everyone know you're attending!</p>
+                <p className="text-sm text-muted-foreground">Share with friends & on social media</p>
+              </div>
+              
+              <Button 
+                size="lg"
+                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70" 
+                onClick={handleShare}
+              >
+                <Share2 className="w-5 h-5 mr-2" />
+                Share Ticket
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or share via</span>
+                </div>
               </div>
               
               <SocialShare 
@@ -198,17 +250,6 @@ const TicketViewer = () => {
                 title={`Ticket for ${ticket.events.title}`}
                 description={`Check out my ticket for ${ticket.events.title}!`}
               />
-
-              <div className="pt-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-primary/30 hover:bg-primary/10" 
-                  onClick={handleShare}
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Link
-                </Button>
-              </div>
             </CardContent>
           </Card>
 

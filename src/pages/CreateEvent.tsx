@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft } from 'lucide-react';
 
 const CreateEvent = () => {
@@ -21,7 +22,10 @@ const CreateEvent = () => {
     eventDate: '',
     promotionText: '',
     isFree: true,
-    ticketPrice: '0'
+    ticketPrice: '0',
+    capacity: '',
+    category: '',
+    tags: ''
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
@@ -74,7 +78,7 @@ const CreateEvent = () => {
         const { data: { publicUrl } } = supabase.storage
           .from('event-images')
           .getPublicUrl(fileName);
-        
+
         imageUrl = publicUrl;
       }
 
@@ -87,15 +91,20 @@ const CreateEvent = () => {
         promotion_text: formData.promotionText,
         is_free: formData.isFree,
         ticket_price: formData.isFree ? 0 : parseFloat(formData.ticketPrice),
-        image_url: imageUrl
+        image_url: imageUrl,
+        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        category: formData.category,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
+        currency: 'INR'
       });
 
       if (error) throw error;
-      
+
       toast.success('Event created successfully!');
       navigate('/events');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create event');
+      console.error('Create event error:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +117,7 @@ const CreateEvent = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        
+
         <Card className="border-2 border-primary/20 shadow-neon-cyan">
           <CardHeader>
             <CardTitle className="text-3xl text-gradient-cyber">Create New Event</CardTitle>
@@ -147,9 +156,9 @@ const CreateEvent = () => {
                 />
                 {imagePreview && (
                   <div className="mt-2">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
                       className="w-full h-48 object-cover rounded-lg border-2 border-border"
                     />
                   </div>
@@ -165,6 +174,36 @@ const CreateEvent = () => {
                   required
                 />
               </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <select
+                    id="category"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Concert">Concert</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Meetup">Meetup</option>
+                    <option value="Party">Party</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <Input
+                    id="tags"
+                    value={formData.tags}
+                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                    placeholder="Music, Tech, VIP (comma separated)"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -210,21 +249,36 @@ const CreateEvent = () => {
                   </label>
                 </div>
               </div>
-              {!formData.isFree && (
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {!formData.isFree && (
+                  <div className="space-y-2">
+                    <Label htmlFor="ticketPrice">Ticket Price (₹)</Label>
+                    <Input
+                      id="ticketPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.ticketPrice}
+                      onChange={(e) => setFormData({ ...formData, ticketPrice: e.target.value })}
+                      placeholder="0.00"
+                      required={!formData.isFree}
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="ticketPrice">Ticket Price</Label>
+                  <Label htmlFor="capacity">Total Capacity</Label>
                   <Input
-                    id="ticketPrice"
+                    id="capacity"
                     type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.ticketPrice}
-                    onChange={(e) => setFormData({ ...formData, ticketPrice: e.target.value })}
-                    placeholder="0.00"
-                    required={!formData.isFree}
+                    min="1"
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                    placeholder="Unlimited"
                   />
                 </div>
-              )}
+              </div>
+
               <Button type="submit" variant="cyber" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating...' : 'Create Event'}
               </Button>

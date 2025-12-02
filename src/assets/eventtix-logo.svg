@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .brand { font: 700 28px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .accent { fill: #00d4ff; }
+    </style>
+  </defs>
+  <!-- White rounded square background to keep contrast over QR -->
+  <rect class="bg" x="8" y="8" width="144" height="144" rx="16" ry="16" />
+  <!-- Wordmark: Event Tix -->
+  <text class="brand" x="80" y="88" text-anchor="middle">Event <tspan class="accent">Tix</tspan></text>
+</svg>

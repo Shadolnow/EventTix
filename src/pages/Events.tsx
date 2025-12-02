@@ -13,6 +13,7 @@ const Events = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState<any[]>([]);
+  const PUBLIC_BASE_URL = (import.meta as any).env?.VITE_PUBLIC_SITE_URL || window.location.origin;
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +55,7 @@ const Events = () => {
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    const url = `${window.location.origin}/public-events`;
+                    const url = `${PUBLIC_BASE_URL}/public-events`;
                     navigator.clipboard.writeText(url);
                     toast.success('Link copied!');
                   }}
@@ -63,7 +64,10 @@ const Events = () => {
                 </Button>
                 <Button 
                   variant="default"
-                  onClick={() => navigate('/public-events')}
+                  onClick={() => {
+                    const url = `${PUBLIC_BASE_URL}/public-events`;
+                    window.open(url, '_blank', 'noopener');
+                  }}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View Public Page
@@ -93,7 +97,7 @@ const Events = () => {
                 <div className="bg-background/50 border border-border rounded-lg p-4 flex flex-col items-center gap-3">
                   <p className="text-sm font-medium">Public Event Link</p>
                   <QRCodeSVG 
-                    value={`${window.location.origin}/e/${event.id}`}
+                    value={`${PUBLIC_BASE_URL}/e/${event.id}`}
                     size={120}
                     level="H"
                   />
@@ -101,7 +105,7 @@ const Events = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      const url = `${window.location.origin}/e/${event.id}`;
+                      const url = `${PUBLIC_BASE_URL}/e/${event.id}`;
                       if (navigator.share) {
                         navigator.share({ url });
                       } else {

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getUserFriendlyError } from '@/lib/errorHandler';
 import { ArrowLeft, UserPlus, Shield, Trash2, Calendar, UserX } from 'lucide-react';
 import {
   Select,
@@ -98,10 +99,11 @@ const Dashboard = () => {
       setIsAdmin(true);
       await loadUsers();
     } catch (error: any) {
+      console.error('Admin check error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
       navigate('/');
     } finally {
@@ -145,10 +147,11 @@ const Dashboard = () => {
         setProfiles(profilesMap);
       }
     } catch (error: any) {
+      console.error('Load users error:', error);
       toast({
         variant: 'destructive',
         title: 'Error loading users',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };
@@ -196,10 +199,11 @@ const Dashboard = () => {
       setNewAdminEmail('');
       await loadUsers();
     } catch (error: any) {
+      console.error('Add admin error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     } finally {
       setAddingAdmin(false);
@@ -249,10 +253,11 @@ const Dashboard = () => {
 
       await loadUsers();
     } catch (error: any) {
+      console.error('Change role error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };
@@ -290,10 +295,11 @@ const Dashboard = () => {
 
       await loadUsers();
     } catch (error: any) {
+      console.error('Delete user error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message,
+        description: getUserFriendlyError(error),
       });
     }
   };

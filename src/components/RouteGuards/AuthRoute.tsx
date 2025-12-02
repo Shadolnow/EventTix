@@ -1,24 +1,30 @@
-import { ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { useAuth } from "@/components/AuthProvider";
+import { ReactNode } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/components/AuthProvider';
+import { Loader2 } from 'lucide-react';
 
 interface AuthRouteProps {
   children: ReactNode;
 }
 
 const AuthRoute = ({ children }: AuthRouteProps) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, session } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    if (!user) {
-      toast.error("Please sign in to access this page");
-      navigate("/auth");
-    }
-  }, [user, navigate]);
+  // Show loading spinner while checking authentication
+  if (session === null && user === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  if (!user) return null;
+  // Redirect to auth if not authenticated
+  if (!session || !user) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
   return <>{children}</>;
 };
 
