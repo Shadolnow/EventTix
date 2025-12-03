@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SocialShare } from '@/components/SocialShare';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Calendar, MapPin, Download, ArrowLeft, IndianRupee, Ticket, Clock, HelpCircle, Image as ImageIcon, CalendarPlus, Users, AlertCircle, Video, Instagram, Facebook, Twitter, Linkedin, Youtube, Globe } from 'lucide-react';
+import { Calendar, MapPin, Download, ArrowLeft, IndianRupee, Ticket, Clock, HelpCircle, Image as ImageIcon, CalendarPlus, Users, AlertCircle, Video, Instagram, Facebook, Twitter, Linkedin, Youtube, Globe, Award } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -388,6 +388,38 @@ const PublicEvent = () => {
                   </AccordionItem>
                 ))}
               </Accordion>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sponsors */}
+        {event.sponsors && event.sponsors.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="w-5 h-5" />
+                Our Sponsors
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                {event.sponsors.map((sponsor: any, index: number) => (
+                  <a
+                    key={index}
+                    href={sponsor.websiteUrl || '#'}
+                    target={sponsor.websiteUrl ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border bg-card hover:shadow-md transition-shadow ${sponsor.websiteUrl ? 'cursor-pointer' : 'cursor-default'}`}
+                  >
+                    <img
+                      src={sponsor.logoUrl}
+                      alt={sponsor.name}
+                      className="h-16 w-auto max-w-full object-contain"
+                    />
+                    <span className="text-sm font-medium text-center">{sponsor.name}</span>
+                  </a>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}

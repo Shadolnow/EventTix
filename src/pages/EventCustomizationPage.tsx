@@ -83,7 +83,8 @@ const EventCustomizationPage = () => {
             faq: event.faq || [],
             schedule: event.schedule || [],
             additionalInfo: event.additional_info || '',
-            socialLinks: event.social_links || {}
+            socialLinks: event.social_links || {},
+            sponsors: event.sponsors || []
           }}
         />
       </div>

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Upload, Video, Instagram, Facebook, Twitter, Globe, Linkedin, Youtube } from 'lucide-react';
+import { Plus, Trash2, Upload, Video, Instagram, Facebook, Twitter, Globe, Linkedin, Youtube, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -28,6 +28,12 @@ interface SocialLinks {
   website?: string;
 }
 
+interface Sponsor {
+  name: string;
+  logoUrl: string;
+  websiteUrl?: string;
+}
+
 interface EventCustomizationProps {
   eventId: string;
   userId: string;
@@ -38,6 +44,7 @@ interface EventCustomizationProps {
     schedule?: ScheduleItem[];
     additionalInfo?: string;
     socialLinks?: SocialLinks;
+    sponsors?: Sponsor[];
   };
 }
 
@@ -48,6 +55,7 @@ export const EventCustomization = ({ eventId, userId, initialData }: EventCustom
   const [schedule, setSchedule] = useState<ScheduleItem[]>(initialData?.schedule || []);
   const [additionalInfo, setAdditionalInfo] = useState(initialData?.additionalInfo || '');
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(initialData?.socialLinks || {});
+  const [sponsors, setSponsors] = useState<Sponsor[]>(initialData?.sponsors || []);
   const [uploading, setUploading] = useState(false);
   const [newVideoUrl, setNewVideoUrl] = useState('');
 
@@ -194,6 +202,67 @@ export const EventCustomization = ({ eventId, userId, initialData }: EventCustom
     setSocialLinks({ ...socialLinks, [platform]: value });
   };
 
+  // Sponsor handling
+  const handleSponsorLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 2 * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    
+    if (file.size > maxSize) {
+      toast.error('Logo is too large. Maximum size is 2MB');
+      return;
+    }
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG are allowed');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileName = `${userId}/sponsors/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('event-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-images')
+        .getPublicUrl(fileName);
+
+      const updated = [...sponsors];
+      updated[index].logoUrl = publicUrl;
+      setSponsors(updated);
+      toast.success('Sponsor logo uploaded!');
+    } catch (error: any) {
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const addSponsor = () => {
+    if (sponsors.length >= 20) {
+      toast.error('Maximum 20 sponsors allowed');
+      return;
+    }
+    setSponsors([...sponsors, { name: '', logoUrl: '', websiteUrl: '' }]);
+  };
+
+  const updateSponsor = (index: number, field: keyof Sponsor, value: string) => {
+    const updated = [...sponsors];
+    updated[index][field] = value;
+    setSponsors(updated);
+  };
+
+  const removeSponsor = (index: number) => {
+    setSponsors(sponsors.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     try {
       const { error } = await supabase
@@ -204,7 +273,8 @@ export const EventCustomization = ({ eventId, userId, initialData }: EventCustom
           faq: faq.filter(f => f.question && f.answer) as any,
           schedule: schedule.filter(s => s.time && s.title) as any,
           additional_info: additionalInfo,
-          social_links: socialLinks as any
+          social_links: socialLinks as any,
+          sponsors: sponsors.filter(s => s.name && s.logoUrl) as any
         })
         .eq('id', eventId);
 
@@ -494,6 +564,91 @@ export const EventCustomization = ({ eventId, userId, initialData }: EventCustom
             onChange={(e) => setAdditionalInfo(e.target.value)}
             rows={5}
           />
+        </CardContent>
+      </Card>
+
+      {/* Sponsors */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              Event Sponsors
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={addSponsor}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Sponsor
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sponsors.map((sponsor, index) => (
+            <div key={index} className="space-y-3 p-4 border rounded-lg">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <Label>Sponsor Name</Label>
+                    <Input
+                      placeholder="e.g., Acme Corp"
+                      value={sponsor.name}
+                      onChange={(e) => updateSponsor(index, 'name', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Logo</Label>
+                    {sponsor.logoUrl ? (
+                      <div className="flex items-center gap-3 mt-1">
+                        <img 
+                          src={sponsor.logoUrl} 
+                          alt={sponsor.name || 'Sponsor logo'}
+                          className="h-16 w-auto max-w-[200px] object-contain border rounded p-1 bg-background"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateSponsor(index, 'logoUrl', '')}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    ) : (
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleSponsorLogoUpload(e, index)}
+                        disabled={uploading}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label>Website URL (optional)</Label>
+                    <Input
+                      placeholder="https://sponsor-website.com"
+                      value={sponsor.websiteUrl || ''}
+                      onChange={(e) => updateSponsor(index, 'websiteUrl', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeSponsor(index)}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          {sponsors.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No sponsors added yet. Click "Add Sponsor" to showcase your event partners.
+            </p>
+          )}
         </CardContent>
       </Card>
 
