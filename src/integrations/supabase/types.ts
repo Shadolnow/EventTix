@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_subscriptions: {
+        Row: {
+          company_email: string
+          company_name: string
+          company_phone: string | null
+          created_at: string
+          events_limit: number | null
+          events_used: number | null
+          expires_at: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price_per_month: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_email: string
+          company_name: string
+          company_phone?: string | null
+          created_at?: string
+          events_limit?: number | null
+          events_used?: number | null
+          expires_at?: string | null
+          id?: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price_per_month?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_email?: string
+          company_name?: string
+          company_phone?: string | null
+          created_at?: string
+          events_limit?: number | null
+          events_used?: number | null
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          price_per_month?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_exports: {
         Row: {
           created_at: string
@@ -297,6 +348,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      subscription_plan: "monthly" | "annual" | "pay_as_you_go"
+      subscription_status: "pending" | "active" | "cancelled" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -425,6 +478,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      subscription_plan: ["monthly", "annual", "pay_as_you_go"],
+      subscription_status: ["pending", "active", "cancelled", "expired"],
     },
   },
 } as const

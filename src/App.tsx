@@ -18,6 +18,9 @@ import Dashboard from "./pages/Dashboard";
 import AdminEvents from "./pages/AdminEvents";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventCustomizationPage from "./pages/EventCustomizationPage";
+import Pricing from "./pages/Pricing";
+import BusinessSignup from "./pages/BusinessSignup";
+import AdminSubscriptions from "./pages/AdminSubscriptions";
 import NotFound from "./pages/NotFound";
 import AuthRoute from "@/components/RouteGuards/AuthRoute";
 
@@ -33,6 +36,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/business-signup" element={<BusinessSignup />} />
             <Route path="/e/:eventId" element={<PublicEvent />} />
             <Route path="/public-events" element={<PublicEvents />} />
             <Route path="/ticket/:ticketId" element={<TicketViewer />} />
@@ -47,6 +52,7 @@ const App = () => (
             <Route path="/dashboard" element={<AuthRoute><Dashboard /></AuthRoute>} />
             <Route path="/admin" element={<AuthRoute><AdminDashboard /></AuthRoute>} />
             <Route path="/admin/events" element={<AuthRoute><AdminEvents /></AuthRoute>} />
+            <Route path="/admin/subscriptions" element={<AuthRoute><AdminSubscriptions /></AuthRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

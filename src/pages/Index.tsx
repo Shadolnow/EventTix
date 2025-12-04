@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
-import { Ticket, QrCode, Sparkles, LogOut, Shield, LogIn } from 'lucide-react';
+import { Ticket, QrCode, Sparkles, LogOut, Shield, Building2 } from 'lucide-react';
 import heroImage from '@/assets/eventtix-hero.jpg';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -67,6 +67,12 @@ const Index = () => {
               </>
             ) : (
               <>
+                <Link to="/pricing">
+                  <Button variant="ghost" className="hover:text-cyan-400">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    For Business
+                  </Button>
+                </Link>
                 <Link to="/auth">
                   <Button variant="ghost" className="hover:text-cyan-400">Sign In</Button>
                 </Link>

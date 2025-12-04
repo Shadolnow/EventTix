@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Users, Calendar, Ticket, TrendingUp, Shield, Mail, ArrowLeft, Loader2, Send, Trash2, CheckCircle2 } from 'lucide-react';
+import { Users, Calendar, Ticket, TrendingUp, Shield, Mail, ArrowLeft, Loader2, Send, Trash2, CheckCircle2, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface User {
@@ -377,9 +377,17 @@ const AdminDashboard = () => {
               <h1 className="text-2xl font-bold">Admin Dashboard</h1>
             </div>
           </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary">
-            Administrator
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Link to="/admin/subscriptions">
+              <Button variant="outline" className="border-primary/50 hover:border-primary">
+                <Building2 className="w-4 h-4 mr-2" />
+                Subscriptions
+              </Button>
+            </Link>
+            <Badge variant="outline" className="bg-primary/10 text-primary">
+              Administrator
+            </Badge>
+          </div>
         </div>
       </header>
 
