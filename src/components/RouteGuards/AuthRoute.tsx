@@ -8,11 +8,11 @@ interface AuthRouteProps {
 }
 
 const AuthRoute = ({ children }: AuthRouteProps) => {
-  const { user, session } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
-  if (session === null && user === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -21,7 +21,7 @@ const AuthRoute = ({ children }: AuthRouteProps) => {
   }
 
   // Redirect to auth if not authenticated
-  if (!session || !user) {
+  if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
