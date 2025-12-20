@@ -2,6 +2,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
+// Lovable Cloud project configuration
+const LOVABLE_CLOUD_CONFIG = {
+  projectId: "aikfuhueuoiagyviyoou",
+  url: "https://aikfuhueuoiagyviyoou.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpa2Z1aHVldW9pYWd5dml5b291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxOTM0NTIsImV4cCI6MjA4MTc2OTQ1Mn0.FFeb2EFbd6zsZzx413pZSJ3V_bPl-3O9gdrKBTGw5PE",
+};
+
 type SupabaseEnv = {
   url?: string;
   key?: string;
@@ -17,43 +24,36 @@ const readEnv = (): SupabaseEnv => {
   };
 };
 
-const resolveUrl = ({ url, projectId }: SupabaseEnv) => {
-  if (url) return url;
-  if (projectId) return `https://${projectId}.supabase.co`;
-  return undefined;
+const resolveConfig = () => {
+  const env = readEnv();
+  
+  // Try environment variables first
+  const envUrl = env.url || (env.projectId ? `https://${env.projectId}.supabase.co` : undefined);
+  const envKey = env.key;
+  
+  if (envUrl && envKey) {
+    return { url: envUrl, key: envKey };
+  }
+  
+  // Fall back to Lovable Cloud config
+  return {
+    url: LOVABLE_CLOUD_CONFIG.url,
+    key: LOVABLE_CLOUD_CONFIG.anonKey,
+  };
 };
 
-const env = readEnv();
-const resolvedUrl = resolveUrl(env);
-const resolvedKey = env.key;
+const config = resolveConfig();
 
-const configError =
-  !resolvedUrl || !resolvedKey
-    ? `Backend config missing: ${[
-        !resolvedUrl ? "VITE_SUPABASE_URL (or VITE_SUPABASE_PROJECT_ID)" : null,
-        !resolvedKey ? "VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY)" : null,
-      ]
-        .filter(Boolean)
-        .join(" + ")}.`
-    : null;
+export const supabase: SupabaseClient<Database> = createClient<Database>(
+  config.url,
+  config.key,
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
+);
 
-if (configError) {
-  // Avoid crashing on import; if code later tries to use the client, it will throw.
-  console.error(configError);
-}
-
-export const supabase: SupabaseClient<Database> = configError
-  ? (new Proxy({} as SupabaseClient<Database>, {
-      get() {
-        throw new Error(configError);
-      },
-    }) as SupabaseClient<Database>)
-  : createClient<Database>(resolvedUrl!, resolvedKey!, {
-      auth: {
-        storage: localStorage,
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    });
-
-export const getBackendConfigError = () => configError;
+export const getBackendConfigError = () => null;
