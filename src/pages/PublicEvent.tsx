@@ -102,31 +102,29 @@ const PublicEvent = () => {
         }
       }
 
-      const response = await supabase.functions.invoke('send-otp', {
-        body: { email: validated.email }
+      // Use Supabase Auth OTP - no external email service needed
+      const { error } = await supabase.auth.signInWithOtp({
+        email: validated.email,
+        options: {
+          shouldCreateUser: false, // Don't create user account - just verify email
+        }
       });
 
-      if (response.error) {
-        toast.error(response.error.message || 'Failed to send OTP');
-        setLoading(false);
-        return;
-      }
-
-      const result = response.data;
-      if (!result.success) {
-        toast.error(result.error || 'Failed to send OTP');
+      if (error) {
+        toast.error(error.message || 'Failed to send verification code');
         setLoading(false);
         return;
       }
 
       setShowOtpInput(true);
       toast.success(`Verification code sent to ${validated.email}`);
+      setLoading(false);
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to send OTP. Please check your email.');
+        toast.error('Failed to send verification code. Please try again.');
         console.error(error);
       }
       setLoading(false);
@@ -136,14 +134,14 @@ const PublicEvent = () => {
   const verifyOtp = async () => {
     setLoading(true);
     try {
-      const verifyResponse = await supabase.functions.invoke('verify-otp', {
-        body: { email: formData.email, otp }
+      // Use Supabase Auth OTP verification
+      const { error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: otp,
+        type: 'email'
       });
 
-      if (verifyResponse.error) throw new Error(verifyResponse.error.message || "Invalid OTP");
-      
-      const verifyResult = verifyResponse.data;
-      if (!verifyResult.success) throw new Error(verifyResult.error || "Verification failed");
+      if (error) throw new Error(error.message || "Invalid verification code");
 
       setIsEmailVerified(true);
 
@@ -155,7 +153,7 @@ const PublicEvent = () => {
       }
 
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || 'Invalid verification code');
       setLoading(false);
     }
   };
