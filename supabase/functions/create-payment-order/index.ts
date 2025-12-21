@@ -62,30 +62,24 @@ serve(async (req) => {
             );
         }
 
-        // Verify the ticket belongs to the user and is in pending status
+        // Verify the ticket exists
         const { data: ticket, error: ticketError } = await supabase
             .from('tickets')
-            .select('id, payment_status, event_id, attendee_email')
+            .select('id, event_id, attendee_email, is_validated')
             .eq('id', ticketId)
             .eq('event_id', eventId)
             .single();
 
         if (ticketError || !ticket) {
+            console.error('Ticket lookup error:', ticketError);
             return new Response(
                 JSON.stringify({ error: 'Ticket not found' }),
                 { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        if (ticket.payment_status !== 'pending') {
-            return new Response(
-                JSON.stringify({ error: 'Ticket is not eligible for payment' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-        }
-
         // Generate unique receipt
-        const receipt = `rcpt_${ticketId}_${Date.now()}`;
+        const receipt = `rcpt_${ticketId.substring(0, 8)}_${Date.now()}`;
 
         // Create Razorpay order
         const orderOptions = {
@@ -100,29 +94,15 @@ serve(async (req) => {
             },
         };
 
+        console.log('Creating Razorpay order:', orderOptions);
         const order = await razorpay.orders.create(orderOptions);
+        console.log('Razorpay order created:', order.id);
 
-        // Store order details in database (optional - for tracking)
-        const { error: dbError } = await supabase
-            .from('payment_orders')
-            .insert({
-                order_id: order.id,
-                ticket_id: ticketId,
-                amount: amount,
-                currency: currency,
-                status: 'created',
-                razorpay_order_data: order,
-                created_by: user.id,
-            });
-
-        if (dbError) {
-            console.error('Error storing order in database:', dbError);
-            // Don't fail the request if DB insert fails, just log it
-        }
+        const orderAmount = typeof order.amount === 'number' ? order.amount : Number(order.amount);
 
         const responseData = {
             orderId: order.id,
-            amount: order.amount / 100,
+            amount: orderAmount / 100,
             currency: order.currency,
             receipt: order.receipt,
             status: order.status,

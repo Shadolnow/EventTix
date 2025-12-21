@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -148,7 +148,7 @@ const CreateEvent = () => {
                   id="image"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleImageChange(e, 'event')}
+                  onChange={handleImageChange}
                 />
                 {imagePreview && (
                   <div className="mt-2">

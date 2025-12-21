@@ -132,10 +132,6 @@ export const TicketCard = ({ ticket, compact = false }: TicketCardProps) => {
                 <p className="text-xs font-bold tracking-wider text-primary font-mono">
                   {ticket.ticket_code}
                 </p>
-                {/* @ts-ignore */}
-                {ticket.payment_ref_id && (
-                  <p className="text-[10px] text-muted-foreground font-mono mt-1">Ref: {ticket.payment_ref_id}</p>
-                )}
               </div>
             </div>
 

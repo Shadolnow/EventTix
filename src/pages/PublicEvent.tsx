@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -102,28 +102,29 @@ const PublicEvent = () => {
         }
       }
 
-      const response = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: validated.email })
+      // Use Supabase Auth OTP - no external email service needed
+      const { error } = await supabase.auth.signInWithOtp({
+        email: validated.email,
+        options: {
+          shouldCreateUser: false, // Don't create user account - just verify email
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast.error(result.error || 'Failed to send OTP');
+      if (error) {
+        toast.error(error.message || 'Failed to send verification code');
         setLoading(false);
         return;
       }
 
       setShowOtpInput(true);
       toast.success(`Verification code sent to ${validated.email}`);
+      setLoading(false);
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to send OTP. Please check your email.');
+        toast.error('Failed to send verification code. Please try again.');
         console.error(error);
       }
       setLoading(false);
@@ -133,16 +134,14 @@ const PublicEvent = () => {
   const verifyOtp = async () => {
     setLoading(true);
     try {
-      const verifyResponse = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, otp })
+      // Use Supabase Auth OTP verification
+      const { error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: otp,
+        type: 'email'
       });
 
-      const verifyResult = await verifyResponse.json();
-
-      if (!verifyResponse.ok) throw new Error(verifyResult.error || "Invalid OTP");
-      if (!verifyResult.success) throw new Error("Verification failed");
+      if (error) throw new Error(error.message || "Invalid verification code");
 
       setIsEmailVerified(true);
 
@@ -154,7 +153,7 @@ const PublicEvent = () => {
       }
 
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || 'Invalid verification code');
       setLoading(false);
     }
   };

@@ -13,7 +13,7 @@ import { Download, CheckCircle, Clock, MoreHorizontal, Ban, Banknote, AlertCircl
 
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 
@@ -118,16 +118,19 @@ export const AttendeeList = ({ tickets, eventTitle, eventId }: AttendeeListProps
     }
   };
 
-  const updateTicketStatus = async (ticketId: string, status: string) => {
+  const updateTicketValidation = async (ticketId: string, isValidated: boolean) => {
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from('tickets')
-        .update({ payment_status: status })
+        .update({ 
+          is_validated: isValidated,
+          validated_at: isValidated ? new Date().toISOString() : null
+        })
         .eq('id', ticketId);
 
       if (error) throw error;
-      toast.success(`Ticket marked as ${status}`);
+      toast.success(isValidated ? 'Ticket validated' : 'Ticket invalidated');
     } catch (err: any) {
       console.error('Error updating ticket:', err);
       toast.error('Failed to update ticket');
@@ -137,23 +140,10 @@ export const AttendeeList = ({ tickets, eventTitle, eventId }: AttendeeListProps
   };
 
   const getStatusBadge = (ticket: any) => {
-    if (ticket.payment_status === 'expired') {
-      return <Badge variant="destructive">Expired</Badge>;
+    if (ticket.is_validated) {
+      return <Badge className="bg-green-500 text-white hover:bg-green-600">Validated</Badge>;
     }
-    if (ticket.payment_status === 'cancelled') {
-      return <Badge variant="destructive">Cancelled</Badge>;
-    }
-    if (ticket.payment_status === 'pending' || ticket.payment_status === 'pay_at_venue') {
-      return <Badge variant="outline" className="text-yellow-500 border-yellow-500/50">Pending Payment</Badge>;
-    }
-    if (ticket.payment_status === 'paid' || !ticket.payment_status) {
-      // Check validation
-      if (ticket.is_validated) {
-        return <Badge className="bg-green-500 text-white hover:bg-green-600">Validated</Badge>;
-      }
-      return <Badge variant="secondary" className="text-green-500 bg-green-500/10">Paid</Badge>;
-    }
-    return <Badge variant="outline">{ticket.payment_status}</Badge>;
+    return <Badge variant="secondary">Not Validated</Badge>;
   };
 
   return (
@@ -216,19 +206,18 @@ export const AttendeeList = ({ tickets, eventTitle, eventId }: AttendeeListProps
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
 
-                          {/* Payment Actions */}
-                          {(ticket.payment_status === 'pending' || ticket.payment_status === 'pay_at_venue') && (
-                            <DropdownMenuItem onClick={() => updateTicketStatus(ticket.id, 'paid')}>
-                              <Banknote className="mr-2 h-4 w-4" />
-                              Mark as Paid
+                          {/* Validation Actions */}
+                          {!ticket.is_validated && (
+                            <DropdownMenuItem onClick={() => updateTicketValidation(ticket.id, true)}>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Mark as Validated
                             </DropdownMenuItem>
                           )}
 
-                          {/* Cancellation Actions */}
-                          {(ticket.payment_status !== 'cancelled' && ticket.payment_status !== 'expired' && !ticket.is_validated) && (
-                            <DropdownMenuItem onClick={() => updateTicketStatus(ticket.id, 'cancelled')} className="text-orange-500">
+                          {ticket.is_validated && (
+                            <DropdownMenuItem onClick={() => updateTicketValidation(ticket.id, false)} className="text-orange-500">
                               <Ban className="mr-2 h-4 w-4" />
-                              Revoke / Cancel
+                              Invalidate Ticket
                             </DropdownMenuItem>
                           )}
 

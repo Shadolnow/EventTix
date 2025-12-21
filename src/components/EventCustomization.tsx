@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, Upload, Video, Instagram, Facebook, Twitter, Globe, Linkedin, Youtube, Award } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
 import { TicketTiersManager } from './TicketTiersManager';
 
@@ -320,10 +320,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
           schedule: schedule.filter(s => s.time && s.title) as any,
           additional_info: additionalInfo,
           social_links: socialLinks as any,
-          social_links: socialLinks as any,
-          sponsors: sponsors.filter(s => s.name && s.logoUrl) as any,
-          upi_id: upiId,
-          payment_qr_image_url: paymentQrImageUrl
+          sponsors: sponsors.filter(s => s.name && s.logoUrl) as any
         })
         .eq('id', eventId);
 

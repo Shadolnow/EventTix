@@ -102,12 +102,14 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 
   /* Smooth scroll behavior */
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Mobile-optimized tap highlights */
@@ -122,6 +124,23 @@ All colors MUST be HSL.
   select,
   textarea {
     transition: var(--transition-smooth);
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -139,12 +158,50 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-neon-magenta);
   }
 
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile card with glass effect */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+
+  /* Active state scale for touch feedback */
+  .touch-scale {
+    @apply active:scale-[0.98] transition-transform;
+  }
+
+  /* Mobile-first container */
+  .mobile-container {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
+  /* Floating action button styles */
+  .fab {
+    @apply fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40;
+    @apply w-14 h-14 rounded-full shadow-lg;
+    @apply flex items-center justify-center;
+    @apply bg-primary text-primary-foreground;
+    @apply active:scale-95 transition-transform;
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
 
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0px);
@@ -184,7 +241,6 @@ All colors MUST be HSL.
   }
 
   @keyframes gradient-x {
-
     0%,
     100% {
       background-position: 0% 50%;
@@ -195,9 +251,38 @@ All colors MUST be HSL.
     }
   }
 
+  /* Slide up animation for modals/drawers */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Fade in animation */
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   /* Prevent layout shift during animations */
   @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {
@@ -257,5 +342,18 @@ All colors MUST be HSL.
   input[type="range"].slider::-moz-range-thumb:hover {
     box-shadow: 0 0 20px hsl(var(--primary) / 0.8);
     transform: scale(1.1);
+  }
+}
+
+/* Mobile-specific input styling */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
   }
 }
