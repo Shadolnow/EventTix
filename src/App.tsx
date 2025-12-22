@@ -7,6 +7,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
+import { ThemeProvider } from "@/components/theme-provider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CreateEvent from "./pages/CreateEvent";
@@ -79,18 +80,20 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-background text-foreground">
-            <AnimatedRoutes />
-            <MobileNavigation />
-          </div>
-        </BrowserRouter>
-        <PWAInstallPrompt />
-        <PWAUpdateNotification />
-      </TooltipProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen flex flex-col bg-background text-foreground">
+              <AnimatedRoutes />
+              <MobileNavigation />
+            </div>
+          </BrowserRouter>
+          <PWAInstallPrompt />
+          <PWAUpdateNotification />
+        </TooltipProvider>
+      </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

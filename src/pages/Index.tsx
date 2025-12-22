@@ -6,6 +6,7 @@ import { Ticket, QrCode, Sparkles, LogOut, Shield, Building2, Menu, X, ChevronRi
 import heroImage from '@/assets/eventtix-hero.jpg';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { cn } from '@/lib/utils';
+import { ModeToggle } from '@/components/mode-toggle';
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -43,7 +44,7 @@ const Index = () => {
             </div>
             <span className="text-xl md:text-2xl font-bold text-gradient-cyber">EventTix</span>
           </Link>
-          
+
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-3">
             {user ? (
@@ -97,10 +98,12 @@ const Index = () => {
                 </Link>
               </>
             )}
+
+            <ModeToggle />
           </nav>
 
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted/50 active:scale-95 transition-transform"
             onClick={() => setMenuOpen(!menuOpen)}
           >
@@ -180,15 +183,15 @@ const Index = () => {
             )}
           </div>
         </div>
-      </header>
+      </header >
 
       {/* Hero Section - Mobile First */}
-      <section className="relative py-12 md:py-20 overflow-hidden">
+      < section className="relative py-12 md:py-20 overflow-hidden" >
         {/* Background Effects */}
-        <div className="absolute inset-0 -z-10 overflow-hidden">
+        < div className="absolute inset-0 -z-10 overflow-hidden" >
           <div className="absolute top-10 left-0 w-64 md:w-96 h-64 md:h-96 bg-primary/20 rounded-full blur-[100px]" />
           <div className="absolute bottom-10 right-0 w-64 md:w-96 h-64 md:h-96 bg-accent/20 rounded-full blur-[100px]" />
-        </div>
+        </div >
 
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -198,7 +201,7 @@ const Index = () => {
                 <Zap className="w-4 h-4" />
                 <span>Trusted by 10,000+ event organizers</span>
               </div>
-              
+
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                 <span className="text-gradient-cyber">
                   Digital Tickets
@@ -206,11 +209,11 @@ const Index = () => {
                 <br />
                 <span className="text-foreground">For The Future</span>
               </h1>
-              
+
               <p className="text-base md:text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
                 Create stunning event tickets with QR codes. Secure, beautiful, and easy to validate.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link to={user ? "/create-event" : "/auth"} className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base md:text-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground border-0 shadow-neon-cyan active:scale-[0.98] transition-transform">
@@ -253,10 +256,10 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Features Grid - Mobile First */}
-      <section className="py-16 md:py-20 bg-muted/30 backdrop-blur-sm border-y border-border/50">
+      < section className="py-16 md:py-20 bg-muted/30 backdrop-blur-sm border-y border-border/50" >
         <div className="container mx-auto px-4">
           <div className="text-center mb-10 md:mb-16">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">
@@ -266,7 +269,7 @@ const Index = () => {
               Powerful features to manage your events from start to finish
             </p>
           </div>
-          
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               {
@@ -306,7 +309,7 @@ const Index = () => {
                 color: "secondary"
               }
             ].map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 className="p-5 md:p-6 lg:p-8 rounded-2xl bg-card/50 border border-border/50 hover:border-primary/30 transition-all duration-300 group active:scale-[0.98]"
               >
@@ -329,10 +332,10 @@ const Index = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Ticket Options - Mobile Horizontal Scroll */}
-      <section className="py-16 md:py-20">
+      < section className="py-16 md:py-20" >
         <div className="container mx-auto px-4">
           <div className="text-center mb-10 md:mb-16">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 text-foreground">
@@ -342,7 +345,7 @@ const Index = () => {
               Support for all ticket types and pass configurations
             </p>
           </div>
-          
+
           {/* Horizontal scroll on mobile */}
           <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 -mx-4 px-4 md:mx-0 snap-x snap-mandatory scrollbar-hide">
             {/* Standard Pass */}
@@ -400,10 +403,10 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20">
+      < section className="py-16 md:py-20" >
         <div className="container mx-auto px-4">
           <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20 border border-primary/20 p-8 md:p-12 lg:p-16 text-center">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
@@ -423,8 +426,8 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </section>
-    </div>
+      </section >
+    </div >
   );
 };
 
