@@ -27,33 +27,11 @@ export const TicketActions = ({ ticket, onViewDetails }: TicketActionsProps) => 
     toast.success('Opening ticket for download');
   };
 
-  const handleResendEmail = async () => {
-    setSendingEmail(true);
-    try {
-      const { error } = await supabase.functions.invoke('send-ticket-email', {
-        body: {
-          ticketId: ticket.id,
-          attendeeEmail: ticket.attendee_email,
-          attendeeName: ticket.attendee_name,
-          eventTitle: ticket.events?.title,
-          eventDate: ticket.events?.event_date,
-          ticketCode: ticket.ticket_code,
-        },
-      });
 
-      if (error) throw error;
-      toast.success(`Ticket sent to ${ticket.attendee_email}`);
-    } catch (error: any) {
-      console.error('Error sending email:', error);
-      toast.error('Failed to send ticket email');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
 
   const handleShare = async () => {
     const ticketUrl = `${window.location.origin}/ticket/${ticket.id}`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -90,10 +68,7 @@ export const TicketActions = ({ ticket, onViewDetails }: TicketActionsProps) => 
           <Download className="mr-2 h-4 w-4" />
           Download PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleResendEmail} disabled={sendingEmail}>
-          <Mail className="mr-2 h-4 w-4" />
-          {sendingEmail ? 'Sending...' : 'Resend Email'}
-        </DropdownMenuItem>
+
         <DropdownMenuItem onClick={handleShare}>
           <Share2 className="mr-2 h-4 w-4" />
           Share Link

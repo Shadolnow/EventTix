@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SocialShare } from '@/components/SocialShare';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Calendar, MapPin, Download, ArrowLeft, Ticket, Clock, HelpCircle, Image as ImageIcon, CalendarPlus, Users, AlertCircle, Video, Instagram, Facebook, Twitter, Linkedin, Youtube, Globe, Award, CheckCircle2 } from 'lucide-react';
+import { Calendar, MapPin, Download, ArrowLeft, Ticket, Clock, HelpCircle, Image as ImageIcon, CalendarPlus, Users, AlertCircle, Video, Instagram, Facebook, Twitter, Linkedin, Youtube, Globe, Award, CheckCircle2, Copy, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -17,11 +17,12 @@ import { RazorpayCheckout } from '@/components/RazorpayCheckout';
 import { downloadICS } from '@/utils/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { SocialProofBanner, CountdownTimer } from '@/components/SocialProof';
+import { TrustBadges, RefundPolicy, SecuritySection, Testimonials } from '@/components/TrustSignals';
+import { CheckoutProgress } from '@/components/CheckoutProgress';
+import { PromoCodeInput, PriceDisplay } from '@/components/PromoCode';
+import { ReferralBanner } from '@/components/ReferralProgram';
+import { sendTicketViaWhatsApp } from '@/utils/whatsapp';
 
 interface SelectedTier {
   id: string;
@@ -35,6 +36,9 @@ const claimSchema = z.object({
   phone: z.string().trim().min(10, "Valid phone number required").max(20)
 });
 
+// Key for storing pending ticket data in localStorage
+const PENDING_TICKET_KEY = 'pending_ticket_claim';
+
 const PublicEvent = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -43,7 +47,6 @@ const PublicEvent = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
-  const [otp, setOtp] = useState("");
   const [selectedTier, setSelectedTier] = useState<SelectedTier | null>(null);
   const [hasTiers, setHasTiers] = useState(false);
 
@@ -84,6 +87,69 @@ const PublicEvent = () => {
     fetchEvent();
   }, [eventId, navigate]);
 
+  // Check for magic link verification on page load
+  useEffect(() => {
+    const handleMagicLinkVerification = async () => {
+      // Check if we have a pending ticket claim in localStorage
+      const pendingData = localStorage.getItem(PENDING_TICKET_KEY);
+      if (!pendingData) return;
+
+      const pending = JSON.parse(pendingData);
+
+      // Check if this is for the current event
+      if (pending.eventId !== eventId) return;
+
+      // Check if user is authenticated (magic link clicked)
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session && session.user?.email?.toLowerCase() === pending.email.toLowerCase()) {
+        // Email verified! Restore form data and proceed
+        setFormData({
+          name: pending.name,
+          email: pending.email,
+          phone: pending.phone
+        });
+
+        if (pending.tierId) {
+          setSelectedTier({
+            id: pending.tierId,
+            name: pending.tierName,
+            price: pending.tierPrice
+          });
+        }
+
+        setIsEmailVerified(true);
+        setShowOtpInput(false); // Hide "check email" UI if visible
+        toast.success('Email verified successfully!');
+
+        // Clear pending data
+        localStorage.removeItem(PENDING_TICKET_KEY);
+
+        // Sign out the temporary session (we don't need the user to stay logged in)
+        await supabase.auth.signOut();
+
+        // Proceed with ticket creation or payment
+        if (pending.isFree) {
+          // For free events, create ticket directly
+          // We need to wait for event data to load
+        } else {
+          setShowPaymentDialog(true);
+        }
+      }
+    };
+
+    // Small delay to ensure event data is loaded
+    const timer = setTimeout(handleMagicLinkVerification, 500);
+    return () => clearTimeout(timer);
+  }, [eventId, event]);
+
+  // Auto-create ticket for free events after verification
+  useEffect(() => {
+    if (isEmailVerified && event?.is_free && formData.name && !claimedTicket) {
+      createTicket(); // Use default online method for free tickets
+    }
+  }, [isEmailVerified, event, formData, claimedTicket]);
+
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -102,76 +168,44 @@ const PublicEvent = () => {
         }
       }
 
-      // Use Supabase Auth OTP - no external email service needed
-      const { error } = await supabase.auth.signInWithOtp({
-        email: validated.email,
-        options: {
-          shouldCreateUser: false, // Don't create user account - just verify email
-        }
-      });
+      // NEW FLOW: Skip email verification - proceed directly based on event type
+      // Email is validated by ticket delivery (if wrong email, no ticket received)
 
-      if (error) {
-        toast.error(error.message || 'Failed to send verification code');
+      if (event.is_free) {
+        // Free Event: Create ticket immediately
+        await createTicket();
+      } else {
+        // Paid Event: Show payment dialog
+        setShowPaymentDialog(true);
         setLoading(false);
-        return;
       }
-
-      setShowOtpInput(true);
-      toast.success(`Verification code sent to ${validated.email}`);
-      setLoading(false);
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error('Failed to send verification code. Please try again.');
+        toast.error('Something went wrong. Please try again.');
         console.error(error);
       }
       setLoading(false);
     }
   };
 
-  const verifyOtp = async () => {
-    setLoading(true);
-    try {
-      // Use Supabase Auth OTP verification
-      const { error } = await supabase.auth.verifyOtp({
-        email: formData.email,
-        token: otp,
-        type: 'email'
-      });
-
-      if (error) throw new Error(error.message || "Invalid verification code");
-
-      setIsEmailVerified(true);
-
-      if (event.is_free) {
-        await createTicket();
-      } else {
-        setShowPaymentDialog(true);
-        setLoading(false);
-      }
-
-    } catch (error: any) {
-      toast.error(error.message || 'Invalid verification code');
-      setLoading(false);
-    }
-  };
-
-  const createTicket = async (paymentType: 'online' | 'venue' = 'online') => {
+  const createTicket = async (paymentType: 'upi' | 'cash' = 'upi') => {
     try {
       setLoading(true);
       const ticketCode = `${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
-      // Determine status based on payment type
+      // Determine status: Free = paid instantly, Paid events = pending (admin approves)
       let status = 'pending';
-      let refId = transactionId || null;
+      let refId: string | null = null;
 
       if (event.is_free) {
-        status = 'paid';
-      } else if (paymentType === 'venue') {
-        status = 'pay_at_venue';
-        refId = 'PAY_AT_VENUE';
+        status = 'paid'; // Free tickets are always confirmed
+      } else {
+        // Both UPI and Cash start as pending - admin verifies later
+        status = 'pending';
+        refId = paymentType === 'upi' ? `UPI_${Date.now()}` : `CASH_${Date.now()}`;
       }
 
       const { data: ticket, error } = await supabase
@@ -191,61 +225,37 @@ const PublicEvent = () => {
 
       if (error) throw error;
 
-      // BRANCH LOGIC: Free/Venue vs Paid
-      if (event.is_free || paymentType === 'venue') {
-        // Instant Success (Free or Pay at Venue Token)
-        setClaimedTicket({ ...ticket, events: event, tier_name: selectedTier?.name });
-        setShowPaymentDialog(false);
+      // Set the claimed ticket to show success UI
+      setClaimedTicket({ ...ticket, events: event, tier_name: selectedTier?.name });
+      setShowPaymentDialog(false);
 
-        const successMsg = paymentType === 'venue'
-          ? 'Booking Token Generated! Pay at venue to activate.'
-          : 'Ticket claimed successfully!';
-        toast.success(successMsg);
+      // Success message based on type
+      const successMsg = event.is_free
+        ? '🎉 Ticket claimed successfully!'
+        : paymentType === 'upi'
+          ? '✅ Ticket generated! Payment verification pending.'
+          : '✅ Ticket reserved! Pay cash at venue.';
+      toast.success(successMsg);
 
-        // Send Email async
-        try {
-          await fetch('/api/send-ticket', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: formData.email,
-              ticketCode: ticketCode,
-              eventTitle: event.title,
-              eventDate: format(new Date(event.event_date), 'PPP'),
-              venue: event.venue,
-              ticketId: ticket.id,
-              attendeeName: formData.name,
-              isToken: paymentType === 'venue'
-            })
-          });
-          if (paymentType !== 'venue') toast.success('Ticket sent to your email!');
-        } catch (emailError) {
-          console.error("Failed to send email:", emailError);
-        }
+      // WhatsApp Link with ticket details
+      const ticketUrl = `${window.location.origin}/ticket/${ticket.id}`;
+      const paymentNote = event.is_free
+        ? ''
+        : paymentType === 'upi'
+          ? '\n💳 Payment Status: Pending Verification'
+          : '\n💵 Payment: Cash at Venue';
+      const message = `🎫 *Ticket Booked!*\n\nEvent: ${event.title}\nDate: ${format(new Date(event.event_date), 'PPP')}\nVenue: ${event.venue}\nCode: ${ticketCode}${paymentNote}\n\n🔗 View Ticket: ${ticketUrl}`;
 
-        // WhatsApp Link
-        const ticketUrl = `${window.location.origin}/ticket/${ticket.id}`;
-        const typeLabel = paymentType === 'venue' ? 'Booking Token' : 'Ticket';
-        const message = `🎫 Your ${typeLabel} for ${event.title}\n\nEvent: ${event.title}\nDate: ${format(new Date(event.event_date), 'PPP')}\nVenue: ${event.venue}\nCode: ${ticketCode}\n\nView: ${ticketUrl}`;
-
-        const cleanPhone = formData.phone.replace(/\D/g, '');
-        if (cleanPhone.length >= 10) {
-          const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-          window.open(whatsappUrl, '_blank');
-        }
-      } else {
-        // PAID FLOW (Pending Approval)
-        setShowPaymentDialog(false);
-        toast.success('Payment recorded. Ticket is pending approval.');
-        navigate(`/e/${eventId}/pending`, {
-          state: { email: formData.email, ticketId: ticket.id }
-        });
-        return;
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(message)}`;
+        // Small delay to show success state first
+        setTimeout(() => window.open(whatsappUrl, '_blank'), 1000);
       }
 
     } catch (error: any) {
       console.error("Claim Error:", error);
-      toast.error('Failed to claim ticket: ' + error.message);
+      toast.error('Failed to generate ticket: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -545,7 +555,22 @@ const PublicEvent = () => {
 
         {/* Registration Section */}
         {!claimedTicket ? (
-          <div id="register">
+          <div id="register" className="space-y-6">
+            {/* Social Proof Banner */}
+            <SocialProofBanner
+              eventId={eventId!}
+              capacity={event.capacity}
+              ticketsIssued={event.tickets_issued}
+            />
+
+            {/* Early Bird Countdown (if applicable - show for 7 days before event) */}
+            {new Date(event.event_date).getTime() - new Date().getTime() > 7 * 24 * 60 * 60 * 1000 && (
+              <CountdownTimer
+                deadline={new Date(new Date(event.event_date).getTime() - 7 * 24 * 60 * 60 * 1000)}
+                label="🎟️ Early Bird Pricing Ends In"
+              />
+            )}
+
             {(event.capacity && event.tickets_issued >= event.capacity) ? (
               <Alert variant="destructive" className="mb-8">
                 <AlertCircle className="h-4 w-4" />
@@ -563,107 +588,80 @@ const PublicEvent = () => {
                   <CardDescription>
                     Enter your details to book your spot.
                   </CardDescription>
+                  {/* Checkout Progress Indicator */}
+                  <CheckoutProgress
+                    currentStep={claimedTicket ? 'confirm' : 'details'}
+                  />
                 </CardHeader>
                 <CardContent>
-                  {!showOtpInput ? (
-                    <form onSubmit={handleClaim} className="space-y-4">
-                      {hasTiers && (
-                        <TierSelector
-                          eventId={eventId!}
-                          isFreeEvent={event.is_free}
-                          selectedTierId={selectedTier?.id || null}
-                          onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
-                        />
-                      )}
+                  <form onSubmit={handleClaim} className="space-y-4">
+                    {hasTiers && (
+                      <TierSelector
+                        eventId={eventId!}
+                        isFreeEvent={event.is_free}
+                        selectedTierId={selectedTier?.id || null}
+                        onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
+                      />
+                    )}
 
-                      {!event.is_free && !hasTiers && (
-                        <div className="p-4 bg-muted rounded-lg flex justify-between items-center">
-                          <span className="font-medium">Standard Ticket</span>
-                          <span className="text-xl font-bold text-primary">₹{event.ticket_price}</span>
-                        </div>
-                      )}
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                            placeholder="John Doe"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone (WhatsApp)</Label>
-                          <Input
-                            id="phone"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            required
-                            placeholder="+91 9876543210"
-                          />
-                        </div>
+                    {!event.is_free && !hasTiers && (
+                      <div className="p-4 bg-muted rounded-lg flex justify-between items-center">
+                        <span className="font-medium">Standard Ticket</span>
+                        <span className="text-xl font-bold text-primary">₹{event.ticket_price}</span>
                       </div>
+                    )}
 
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="name">Full Name</Label>
                         <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           required
-                          placeholder="john@example.com"
+                          placeholder="John Doe"
                         />
-                        <p className="text-xs text-muted-foreground">We'll verify this email with an OTP.</p>
                       </div>
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
-                        size="lg"
-                        disabled={loading || (hasTiers && !selectedTier)}
-                      >
-                        {loading ? 'Sending OTP...' : 'Verify Email & Continue'}
-                      </Button>
-                    </form>
-                  ) : (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                      <div className="text-center space-y-2">
-                        <h3 className="font-semibold text-lg">Verify Email Address</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Enter the 6-digit code sent to <span className="text-foreground font-medium">{formData.email}</span>
-                        </p>
-                      </div>
-
-                      <div className="flex justify-center my-4">
-                        <InputOTP
-                          maxLength={6}
-                          value={otp}
-                          onChange={(value) => setOtp(value)}
-                        >
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1" onClick={() => setShowOtpInput(false)}>
-                          Change Details
-                        </Button>
-                        <Button className="flex-1" onClick={verifyOtp} disabled={otp.length !== 6 || loading}>
-                          {loading ? 'Verifying...' : (event.is_free ? 'Claim Ticket' : 'Proceed to Payment')}
-                        </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone (WhatsApp)</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          required
+                          placeholder="+91 9876543210"
+                        />
                       </div>
                     </div>
-                  )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                        placeholder="john@example.com"
+                      />
+                      <p className="text-xs text-muted-foreground">We'll send your ticket to this email.</p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full btn-mobile-primary relative overflow-hidden group bg-gradient-to-r from-primary to-accent"
+                      disabled={loading || (hasTiers && !selectedTier)}
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        {loading ? 'Processing...' : (
+                          <>
+                            {event.is_free ? '🎫 Get My Free Ticket' : '💳 Proceed to Payment'} <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             )}
@@ -693,54 +691,165 @@ const PublicEvent = () => {
           </div>
         )}
 
-        {/* Payment Dialog */}
+        {/* Testimonials Section */}
+        <div className="mt-12">
+          <Testimonials />
+        </div>
+
+        {/* Refund Policy Section */}
+        <div className="mt-8">
+          <RefundPolicy />
+        </div>
+
+        {/* Payment Dialog - UPI & Cash Only */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Complete Payment</DialogTitle>
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                💳 Complete Payment
+              </DialogTitle>
               <DialogDescription>
-                Choose your preferred payment method to buy your ticket instantly.
+                Pay ₹{ticketPrice} for {selectedTier?.name || 'Standard'} ticket
               </DialogDescription>
             </DialogHeader>
 
-            <RazorpayCheckout
-              amount={ticketPrice}
-              description={`${event.title} - ${selectedTier ? selectedTier.name : 'Standard'} Ticket`}
-              orderId="" // This will be set when we create the order
-              customerInfo={{
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-              }}
-              onSuccess={async (paymentResponse) => {
-                // For localhost development, simulate successful payment
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                  setTransactionId(`LOCAL_${Date.now()}`);
-                  await createTicket('online');
-                  toast.success('Payment successful! (Development mode)');
-                  return;
-                }
+            <div className="space-y-4">
+              {/* Order Summary */}
+              <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Event</span>
+                  <span className="font-medium">{event.title}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Ticket Type</span>
+                  <span>{selectedTier?.name || 'Standard'}</span>
+                </div>
+                <div className="border-t border-border pt-2 flex justify-between">
+                  <span className="font-semibold">Total</span>
+                  <span className="text-xl font-bold text-primary">₹{ticketPrice}</span>
+                </div>
+              </div>
 
-                // Production: Update ticket with payment reference
-                setTransactionId(paymentResponse.paymentId);
-                // Create ticket with payment confirmation
-                await createTicket('online');
-              }}
-              onFailure={(error) => {
-                console.error('Payment failed:', error);
-                toast.error('Payment failed. Please try again.');
-              }}
-            />
+              {/* Promo Code Input */}
+              <div className="border-t pt-4">
+                <PromoCodeInput
+                  eventId={eventId!}
+                  originalPrice={ticketPrice}
+                  onApply={(discount) => {
+                    // Store discount info for ticket creation
+                    toast.success(`Discount applied! You pay ₹${discount.finalPrice}`);
+                  }}
+                  onRemove={() => {
+                    // Reset to original price
+                  }}
+                />
+              </div>
 
-            <div className="flex justify-center pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => createTicket('venue')}
-                disabled={loading}
-                className="border-primary text-primary hover:bg-primary/10"
-              >
-                Pay at Venue Instead
-              </Button>
+              {/* Payment Options */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-center text-muted-foreground">
+                  Choose Payment Method
+                </p>
+
+                {/* UPI Payment Option */}
+                <div className="p-4 border-2 border-primary/30 rounded-xl bg-primary/5 hover:border-primary/50 transition-all">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                      <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10.5 13.5L14.5 9.5L13.09 8.09L10.5 10.67L8.91 9.09L7.5 10.5L10.5 13.5ZM12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold">UPI Payment</p>
+                      <p className="text-xs text-muted-foreground">GPay, PhonePe, Paytm, BHIM</p>
+                    </div>
+                  </div>
+
+                  {/* UPI QR Code */}
+                  {event.payment_qr_image_url && (
+                    <div className="flex justify-center mb-3">
+                      <div className="bg-white p-3 rounded-xl">
+                        <img
+                          src={event.payment_qr_image_url}
+                          alt="UPI QR Code"
+                          className="w-40 h-40 object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* UPI ID */}
+                  {event.upi_id && (
+                    <div className="mb-3">
+                      <p className="text-xs text-center text-muted-foreground mb-1">Or pay to UPI ID</p>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(event.upi_id);
+                          toast.success('UPI ID copied!');
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-background rounded-lg border border-border hover:border-primary/50 transition-colors"
+                      >
+                        <code className="font-mono text-sm font-medium text-primary">{event.upi_id}</code>
+                        <Copy className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Instruction */}
+                  <p className="text-xs text-center text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                    💡 Scan the QR code or copy the UPI ID to make payment. Your ticket will be generated and admin will verify.
+                  </p>
+
+                  <Button
+                    onClick={() => createTicket('upi')}
+                    disabled={loading}
+                    className="w-full mt-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 min-h-[48px]"
+                  >
+                    {loading ? 'Processing...' : '✅ I have made UPI Payment'}
+                  </Button>
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 py-2">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground">OR</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Cash at Venue Option */}
+                <button
+                  onClick={() => createTicket('cash')}
+                  disabled={loading}
+                  className="w-full p-4 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-muted/50 transition-all flex items-center gap-3 group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                    <IndianRupee className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold group-hover:text-primary transition-colors">Pay Cash at Venue</p>
+                    <p className="text-xs text-muted-foreground">Reserve now, pay when you arrive</p>
+                  </div>
+                  <ArrowLeft className="w-5 h-5 rotate-180 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </button>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <span>Secure</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <span>Instant Ticket</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <span>WhatsApp Delivery</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

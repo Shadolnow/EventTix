@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Users, Calendar, Ticket, TrendingUp, Shield, Mail, ArrowLeft, Loader2, Send, Trash2, CheckCircle2, Building2 } from 'lucide-react';
+import { Users, Calendar, Ticket, TrendingUp, Shield, Mail, ArrowLeft, Loader2, Send, Trash2, CheckCircle2, Building2, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PromoCodeManager } from '@/components/PromoCodeManager';
 
 interface User {
   id: string;
@@ -92,7 +93,7 @@ const AdminDashboard = () => {
       // Get recent signups (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       const { count: recentSignupsCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -110,14 +111,14 @@ const AdminDashboard = () => {
         .from('events')
         .select('id, title, event_date, tickets_issued')
         .order('event_date', { ascending: false });
-      
+
       if (eventsData) {
         setEvents(eventsData);
       }
 
       // Load users list
       await loadUsers();
-      
+
       // Load tickets list
       await loadTickets();
     } catch (error) {
@@ -378,6 +379,12 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/admin/tickets">
+              <Button variant="outline" className="border-primary/50 hover:border-primary">
+                <Ticket className="w-4 h-4 mr-2" />
+                All Tickets
+              </Button>
+            </Link>
             <Link to="/admin/subscriptions">
               <Button variant="outline" className="border-primary/50 hover:border-primary">
                 <Building2 className="w-4 h-4 mr-2" />
@@ -447,7 +454,8 @@ const AdminDashboard = () => {
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="tickets">Ticket Management</TabsTrigger>
             <TabsTrigger value="events">Event Overview</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="promos">Promo Codes</TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="users" className="space-y-4">
@@ -647,112 +655,11 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Send Event Update</CardTitle>
-                <CardDescription>
-                  Notify all ticket holders about event changes or updates
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Select Event</Label>
-                  <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an event" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {events.map((event) => (
-                        <SelectItem key={event.id} value={event.id}>
-                          {event.title} ({event.tickets_issued} tickets)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Update Message</Label>
-                  <Textarea
-                    placeholder="Enter your update message for attendees..."
-                    value={updateMessage}
-                    onChange={(e) => setUpdateMessage(e.target.value)}
-                    rows={6}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    This message will be sent to all ticket holders for the selected event
-                  </p>
-                </div>
-
-                <Button
-                  onClick={handleSendEventUpdate}
-                  disabled={sendingUpdate || !selectedEvent || !updateMessage.trim()}
-                  className="w-full"
-                >
-                  {sendingUpdate ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Update to Attendees
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Email Notification Status</CardTitle>
-                <CardDescription>
-                  Monitor automated email notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Ticket Confirmation Emails</p>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically sent when users claim tickets
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                    Active
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Event Update Notifications</p>
-                      <p className="text-sm text-muted-foreground">
-                        Sent manually via the interface above
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                    Active
-                  </Badge>
-                </div>
-
-                <div className="pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Email notifications are powered by Resend. Ticket confirmations are sent 
-                    automatically when tickets are claimed from the public event page.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Promo Codes Tab */}
+          <TabsContent value="promos" className="space-y-4">
+            <PromoCodeManager />
           </TabsContent>
+
         </Tabs>
       </div>
     </div>
