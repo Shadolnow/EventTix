@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { getUserFriendlyError } from '@/lib/errorHandler';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles, ScanLine } from 'lucide-react';
 
 const CreateEvent = () => {
   const { user } = useAuth();
@@ -54,6 +54,30 @@ const CreateEvent = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGenerateAI = () => {
+    // Mock AI Generation - simulating network request
+    setIsLoading(true);
+    toast.info("AI Assistant is crafting your event details...");
+
+    setTimeout(() => {
+      const category = formData.category || "General";
+      const newDescription = `Experience the ultimate ${category} event of the year! Join us for an unforgettable experience filled with amazing moments, great networking opportunities, and memories that will last a lifetime. \n\nHighlights:\n✨ Exclusive Venue\n✨ Expert Speakers / Performers\n✨ Networking Sessions\n\nDon't miss out on what promises to be a spectacular gathering of like-minded individuals. Book your tickets now!`;
+
+      const newPromotion = `🔥 Limited Early Bird Tickets! 20% OFF until this weekend!`;
+      const newTags = `${category}, Exclusive, Trending, 2024, MustAttend`;
+
+      setFormData(prev => ({
+        ...prev,
+        description: newDescription,
+        promotionText: newPromotion,
+        tags: newTags
+      }));
+
+      setIsLoading(false);
+      toast.success("AI Content Generated! ✨");
+    }, 1500);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -264,7 +288,20 @@ const CreateEvent = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="description">Description</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-purple-500 border-purple-500/30 hover:bg-purple-500/10"
+                    onClick={handleGenerateAI}
+                    disabled={isLoading}
+                  >
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    Generate with AI
+                  </Button>
+                </div>
                 <Textarea
                   id="description"
                   value={formData.description}

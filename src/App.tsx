@@ -39,6 +39,7 @@ const MobileSettings = lazy(() => import("./pages/MobileSettings"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const GlobalTickets = lazy(() => import("./pages/GlobalTickets"));
 const AllTicketsPage = lazy(() => import("./pages/AllTicketsPage"));
+const DoorStaffScanner = lazy(() => import("./pages/DoorStaffScanner"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const AnimatedRoutes = () => {
           <Route path="/analytics" element={<AuthRoute><PageTransition><Analytics /></PageTransition></AuthRoute>} />
           <Route path="/global-tickets" element={<AuthRoute><PageTransition><GlobalTickets /></PageTransition></AuthRoute>} />
           <Route path="/admin/tickets" element={<AuthRoute><PageTransition><AllTicketsPage /></PageTransition></AuthRoute>} />
+          <Route path="/scanner/:eventId" element={<AuthRoute><PageTransition><DoorStaffScanner /></PageTransition></AuthRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

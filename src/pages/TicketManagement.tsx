@@ -15,7 +15,7 @@ import { EventStats } from '@/components/EventStats';
 import { EventCustomization } from '@/components/EventCustomization';
 import { toast } from 'sonner';
 import { getUserFriendlyError } from '@/lib/errorHandler';
-import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings, Printer, Download, Share2, CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings, Printer, Download, Share2, CreditCard, CheckCircle2, AlertCircle, ScanLine } from 'lucide-react';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -384,102 +384,114 @@ const TicketManagement = () => {
             </p>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="cyber" size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                Generate Ticket
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-2 border-primary/30 max-w-xl">
-              <DialogHeader>
-                <DialogTitle className="text-2xl text-gradient-cyber">
-                  {newlyGeneratedTicket ? 'Ticket Generated!' : 'Generate New Ticket'}
-                </DialogTitle>
-              </DialogHeader>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              onClick={() => navigate(`/scanner/${eventId}`)}
+            >
+              <ScanLine className="w-5 h-5 mr-2" />
+              Launch Scanner
+            </Button>
 
-              {!newlyGeneratedTicket ? (
-                <form onSubmit={handleGenerateTicket} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Attendee Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Attendee Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="john@example.com"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Attendee Phone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+919876543210"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Ticket will be emailed to the attendee automatically.
-                    </p>
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="cyber"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Generating...' : 'Generate Ticket'}
-                  </Button>
-                </form>
-              ) : (
-                <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-                  <div id="new-ticket-card" className="transform scale-90 sm:scale-100 origin-center">
-                    <TicketCard ticket={newlyGeneratedTicket} />
-                  </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="cyber" size="lg">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Generate Ticket
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="border-2 border-primary/30 max-w-xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl text-gradient-cyber">
+                    {newlyGeneratedTicket ? 'Ticket Generated!' : 'Generate New Ticket'}
+                  </DialogTitle>
+                </DialogHeader>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <Button variant="outline" onClick={printTicket} className="flex flex-col h-auto py-3 gap-2">
-                      <Printer className="w-5 h-5" />
-                      <span className="text-xs">Print</span>
+                {!newlyGeneratedTicket ? (
+                  <form onSubmit={handleGenerateTicket} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Attendee Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Attendee Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="john@example.com"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Attendee Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+919876543210"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Ticket will be emailed to the attendee automatically.
+                      </p>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="cyber"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Generating...' : 'Generate Ticket'}
                     </Button>
-                    <Button variant="outline" onClick={downloadTicketImage} className="flex flex-col h-auto py-3 gap-2">
-                      <Download className="w-5 h-5" />
-                      <span className="text-xs">Download</span>
-                    </Button>
-                    <Button variant="outline" onClick={shareTicket} className="flex flex-col h-auto py-3 gap-2">
-                      <Share2 className="w-5 h-5" />
-                      <span className="text-xs">Share</span>
+                  </form>
+                ) : (
+                  <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                    <div id="new-ticket-card" className="transform scale-90 sm:scale-100 origin-center">
+                      <TicketCard ticket={newlyGeneratedTicket} />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <Button variant="outline" onClick={printTicket} className="flex flex-col h-auto py-3 gap-2">
+                        <Printer className="w-5 h-5" />
+                        <span className="text-xs">Print</span>
+                      </Button>
+                      <Button variant="outline" onClick={downloadTicketImage} className="flex flex-col h-auto py-3 gap-2">
+                        <Download className="w-5 h-5" />
+                        <span className="text-xs">Download</span>
+                      </Button>
+                      <Button variant="outline" onClick={shareTicket} className="flex flex-col h-auto py-3 gap-2">
+                        <Share2 className="w-5 h-5" />
+                        <span className="text-xs">Share</span>
+                      </Button>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => {
+                        setNewlyGeneratedTicket(null);
+                        setFormData({ name: '', email: '', phone: '' });
+                        setIsDialogOpen(false);
+                      }}
+                    >
+                      Close
                     </Button>
                   </div>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => {
-                      setNewlyGeneratedTicket(null);
-                      setFormData({ name: '', email: '', phone: '' });
-                      setIsDialogOpen(false);
-                    }}
-                  >
-                    Close
-                  </Button>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {tickets.length === 0 ? (
@@ -629,7 +641,7 @@ const TicketManagement = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
