@@ -683,3 +683,91 @@ All colors MUST be HSL.
 .safe-area-top {
   padding-top: max(16px, env(safe-area-inset-top));
 }
+
+/* ==========================================
+   VISUAL EXCELLENCE ENHANCEMENTS
+   ========================================== */
+
+/* Neumorphism */
+.neumorph {
+  background: linear-gradient(145deg, hsl(220 20% 8%), hsl(220 20% 5%));
+  box-shadow: 6px 6px 12px hsl(220 20% 4%),
+    -6px -6px 12px hsl(220 20% 9%);
+  border-radius: 1rem;
+}
+
+.neumorph-btn {
+  background: linear-gradient(145deg, hsl(220 20% 8%), hsl(220 20% 5%));
+  box-shadow: 4px 4px 8px hsl(220 20% 4%),
+    -4px -4px 8px hsl(220 20% 9%);
+  transition: all 0.2s ease;
+}
+
+.neumorph-btn:active {
+  box-shadow: inset 4px 4px 8px hsl(220 20% 4%),
+    inset -4px -4px 8px hsl(220 20% 9%);
+}
+
+/* Glassmorphism Premium */
+.glass-premium {
+  background: rgba(17, 25, 40, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-morphism-light {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8.5px);
+  -webkit-backdrop-filter: blur(8.5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient Text Premium */
+.text-gradient-gold {
+  background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(to right, #c084fc, #db2777);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Animated Background Gradient */
+.animate-bg-gradient {
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Particle Container (Placeholder for canvas) */
+.particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}

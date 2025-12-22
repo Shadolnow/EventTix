@@ -15,9 +15,10 @@ import { EventStats } from '@/components/EventStats';
 import { EventCustomization } from '@/components/EventCustomization';
 import { toast } from 'sonner';
 import { getUserFriendlyError } from '@/lib/errorHandler';
-import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings, Printer, Download, Share2, CreditCard, CheckCircle2, AlertCircle, ScanLine } from 'lucide-react';
+import { ArrowLeft, Plus, Ticket as TicketIcon, Users, Settings, Printer, Download, Share2, CreditCard, CheckCircle2, AlertCircle, ScanLine, Clock } from 'lucide-react';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WaitlistManager } from '@/components/WaitlistManager';
 
 const attendeeSchema = z.object({
   name: z.string().trim().min(1, { message: 'Name is required' }).max(100),
@@ -516,7 +517,7 @@ const TicketManagement = () => {
             />
 
             <Tabs defaultValue="tickets" className="space-y-6">
-              <TabsList className="grid w-full md:w-auto grid-cols-4">
+              <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-5 h-auto">
                 <TabsTrigger value="tickets">
                   <TicketIcon className="w-4 h-4 mr-2" />
                   Tickets
@@ -524,6 +525,10 @@ const TicketManagement = () => {
                 <TabsTrigger value="attendees">
                   <Users className="w-4 h-4 mr-2" />
                   Attendees
+                </TabsTrigger>
+                <TabsTrigger value="waitlist">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Waitlist
                 </TabsTrigger>
                 <TabsTrigger value="customize">
                   <Settings className="w-4 h-4 mr-2" />
@@ -636,6 +641,10 @@ const TicketManagement = () => {
                     </form>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="waitlist">
+                <WaitlistManager eventId={eventId!} />
               </TabsContent>
             </Tabs>
           </div>

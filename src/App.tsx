@@ -12,6 +12,7 @@ import { lazy, Suspense } from "react";
 import AuthRoute from "@/components/RouteGuards/AuthRoute";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWAUpdateNotification from "@/components/PWAUpdateNotification";
+import { ParticleBackground } from "@/components/ui/ParticleBackground";
 import { Sparkles } from "lucide-react";
 
 // Lazy Load Pages for Performance
@@ -107,7 +108,8 @@ const App = () => (
           <Sonner />
           <CookieConsent />
           <BrowserRouter>
-            <div className="min-h-screen flex flex-col bg-background text-foreground">
+            <ParticleBackground />
+            <div className="min-h-screen flex flex-col relative z-10 text-foreground">
               <AnimatedRoutes />
               <MobileNavigation />
             </div>

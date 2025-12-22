@@ -139,7 +139,22 @@ export const SecuritySettings = () => {
                                 Permanently remove your account and all data. This action cannot be undone.
                             </p>
                         </div>
-                        <Button variant="destructive">
+                        <Button variant="destructive" onClick={async () => {
+                            if (!window.confirm("Are you ABSOLUTELY SURE? This will permanently delete your account, all events, and tickets. This action CANNOT be undone.")) {
+                                return;
+                            }
+
+                            try {
+                                const { error } = await supabase.rpc('delete_user');
+                                if (error) throw error;
+
+                                toast.info("Account deleted. Goodbye!");
+                                await supabase.auth.signOut();
+                                window.location.href = '/';
+                            } catch (error: any) {
+                                toast.error("Failed to delete account: " + error.message);
+                            }
+                        }}>
                             Delete Account
                         </Button>
                     </div>
