@@ -1,22 +1,27 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/safeClient';
+import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, User } from 'lucide-react';
+import { Star, User, Reply, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface ReviewSectionProps {
     eventId: string;
     eventEnded: boolean;
+    isOrganizer?: boolean;
 }
 
-export const ReviewSection = ({ eventId, eventEnded }: ReviewSectionProps) => {
+export const ReviewSection = ({ eventId, eventEnded, isOrganizer = false }: ReviewSectionProps) => {
+    const { user } = useAuth();
     const [reviews, setReviews] = useState<any[]>([]);
     const [averageRating, setAverageRating] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState('');
     const [newReview, setNewReview] = useState({
         name: '',
         rating: 5,
@@ -126,8 +131,8 @@ export const ReviewSection = ({ eventId, eventEnded }: ReviewSectionProps) => {
                                             >
                                                 <Star
                                                     className={`w-6 h-6 ${star <= newReview.rating
-                                                            ? 'fill-yellow-500 text-yellow-500'
-                                                            : 'text-muted-foreground'
+                                                        ? 'fill-yellow-500 text-yellow-500'
+                                                        : 'text-muted-foreground'
                                                         }`}
                                                 />
                                             </button>
@@ -179,8 +184,8 @@ export const ReviewSection = ({ eventId, eventEnded }: ReviewSectionProps) => {
                                             <Star
                                                 key={i}
                                                 className={`w-4 h-4 ${i < review.rating
-                                                        ? 'fill-yellow-500 text-yellow-500'
-                                                        : 'text-muted-foreground/30'
+                                                    ? 'fill-yellow-500 text-yellow-500'
+                                                    : 'text-muted-foreground/30'
                                                     }`}
                                             />
                                         ))}
@@ -189,6 +194,81 @@ export const ReviewSection = ({ eventId, eventEnded }: ReviewSectionProps) => {
                                 <p className="text-sm text-foreground/90 leading-relaxed">
                                     {review.comment}
                                 </p>
+
+                                {/* Organizer Reply */}
+                                {review.organizer_reply && (
+                                    <div className="mt-4 pl-4 border-l-2 border-primary/30 bg-primary/5 p-3 rounded-r-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Reply className="w-4 h-4 text-primary" />
+                                            <span className="text-xs font-semibold text-primary">Organizer Response</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{review.organizer_reply}</p>
+                                        <p className="text-xs text-muted-foreground/60 mt-1">
+                                            {format(new Date(review.replied_at), 'PPP')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Reply Button/Form for Organizers */}
+                                {isOrganizer && !review.organizer_reply && (
+                                    <div className="mt-4">
+                                        {replyingTo === review.id ? (
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="Write your response..."
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    className="flex-1"
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const { error } = await supabase
+                                                                .from('reviews' as any)
+                                                                .update({
+                                                                    organizer_reply: replyText,
+                                                                    replied_at: new Date().toISOString(),
+                                                                    replied_by: user?.id
+                                                                })
+                                                                .eq('id', review.id);
+
+                                                            if (error) throw error;
+                                                            toast.success('Reply posted!');
+                                                            setReplyingTo(null);
+                                                            setReplyText('');
+                                                            fetchReviews();
+                                                        } catch (error) {
+                                                            toast.error('Failed to post reply');
+                                                        }
+                                                    }}
+                                                >
+                                                    Post
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setReplyingTo(null);
+                                                        setReplyText('');
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setReplyingTo(review.id)}
+                                                className="gap-2"
+                                            >
+                                                <MessageSquare className="w-4 h-4" />
+                                                Reply
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     ))

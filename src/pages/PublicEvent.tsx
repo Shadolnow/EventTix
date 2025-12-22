@@ -26,6 +26,7 @@ import { sendTicketViaWhatsApp } from '@/utils/whatsapp';
 import confetti from 'canvas-confetti';
 import { ReviewSection } from '@/components/ReviewSection';
 import { WaitlistForm } from '@/components/WaitlistForm';
+import { useAuth } from '@/components/AuthProvider';
 
 interface SelectedTier {
   id: string;
@@ -45,6 +46,7 @@ const PENDING_TICKET_KEY = 'pending_ticket_claim';
 const PublicEvent = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState<any>(null);
   const [bankDetails, setBankDetails] = useState<any>(null);
   const [claimedTicket, setClaimedTicket] = useState<any>(null);
@@ -762,7 +764,11 @@ const PublicEvent = () => {
         {/* Testimonials Section */}
         <div className="mt-12">
           <Testimonials />
-          <ReviewSection eventId={eventId!} eventEnded={event ? new Date(event.event_date) < new Date() : false} />
+          <ReviewSection
+            eventId={eventId!}
+            eventEnded={event ? new Date(event.event_date) < new Date() : false}
+            isOrganizer={user?.id === event?.user_id}
+          />
         </div>
 
         {/* Refund Policy Section */}
