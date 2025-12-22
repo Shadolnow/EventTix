@@ -258,7 +258,7 @@ const BusinessDashboard = () => {
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <div className="grid md:grid-cols-3 gap-6 mb-8">
                             <Card className="border-2 border-cyan-500/30 hover:border-cyan-500/50 transition-all cursor-pointer" onClick={() => navigate('/events')}>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">

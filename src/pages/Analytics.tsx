@@ -248,7 +248,23 @@ const Analytics = () => {
         { location: 'Delhi', events: Math.floor(events.length * 0.25), revenue: totalRevenue * 0.25 },
         { location: 'Bangalore', events: Math.floor(events.length * 0.20), revenue: totalRevenue * 0.20 },
         { location: 'Pune', events: Math.floor(events.length * 0.15), revenue: totalRevenue * 0.15 },
+
         { location: 'Others', events: Math.floor(events.length * 0.10), revenue: totalRevenue * 0.10 },
+    ];
+
+    // Mock Device Data
+    const deviceData = [
+        { name: 'Mobile', value: 65, color: '#00D9FF' },
+        { name: 'Desktop', value: 25, color: '#A855F7' },
+        { name: 'Tablet', value: 10, color: '#10B981' },
+    ];
+
+    // Mock Traffic Data
+    const trafficData = [
+        { name: 'Direct', value: 40, color: '#F59E0B' },
+        { name: 'Social', value: 35, color: '#EF4444' },
+        { name: 'Search', value: 15, color: '#8B5CF6' },
+        { name: 'Referral', value: 10, color: '#10B981' },
     ];
 
     // Export to PDF
@@ -525,6 +541,63 @@ const Analytics = () => {
                                             </Pie>
                                             <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
                                         </PieChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+
+                        </div>
+
+                        {/* Device & Traffic Stats */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Device Breakdown</CardTitle>
+                                    <CardDescription>User devices used for booking</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={deviceData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={100}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {deviceData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Traffic Sources</CardTitle>
+                                    <CardDescription>Where your attendees come from</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={trafficData} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                            <XAxis type="number" stroke="#888" />
+                                            <YAxis dataKey="name" type="category" stroke="#888" width={60} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                                                cursor={{ fill: 'transparent' }}
+                                            />
+                                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                                {trafficData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
                                     </ResponsiveContainer>
                                 </CardContent>
                             </Card>
@@ -821,7 +894,7 @@ const Analytics = () => {
                     </TabsContent>
                 </Tabs>
             </div>
-        </div>
+        </div >
     );
 };
 
