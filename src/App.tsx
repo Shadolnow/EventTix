@@ -94,6 +94,8 @@ const AnimatedRoutes = () => {
   );
 };
 
+import { CookieConsent } from "@/components/CookieConsent";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -101,6 +103,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <CookieConsent />
           <BrowserRouter>
             <div className="min-h-screen flex flex-col bg-background text-foreground">
               <AnimatedRoutes />

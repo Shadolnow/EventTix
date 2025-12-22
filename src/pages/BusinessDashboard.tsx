@@ -15,8 +15,12 @@ import {
     Ticket,
     QrCode,
     DollarSign,
-    AlertCircle
+    DollarSign,
+    AlertCircle,
+    Shield
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SecuritySettings } from '@/components/SecuritySettings';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -158,160 +162,178 @@ const BusinessDashboard = () => {
                     </Link>
                 </div>
 
-                {/* Subscription Card */}
-                <Card className="mb-8 border-2 border-primary/30 bg-gradient-to-br from-card to-card/50">
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Building2 className="w-6 h-6 text-primary" />
-                                    {currentPlan.name} Plan
-                                </CardTitle>
-                                <CardDescription>
-                                    {subscription?.status === 'active' ? 'Active' : 'Inactive'} •
-                                    {subscription?.expires_at ? ` Expires ${format(new Date(subscription.expires_at), 'PPP')}` : ' No expiry'}
-                                </CardDescription>
-                            </div>
-                            <Badge className={currentPlan.color}>
-                                {subscription?.status?.toUpperCase()}
-                            </Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {eventsLimit !== null && (
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Events Used</span>
-                                    <span className="font-semibold">{eventsUsed} / {eventsLimit}</span>
+
+
+                <Tabs defaultValue="dashboard" className="space-y-6">
+                    <TabsList className="grid w-full md:w-auto grid-cols-2">
+                        <TabsTrigger value="dashboard">Overview</TabsTrigger>
+                        <TabsTrigger value="security">
+                            <Shield className="w-4 h-4 mr-2" />
+                            Security & Privacy
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="dashboard">
+                        {/* Subscription Card */}
+                        <Card className="mb-8 border-2 border-primary/30 bg-gradient-to-br from-card to-card/50">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Building2 className="w-6 h-6 text-primary" />
+                                            {currentPlan.name} Plan
+                                        </CardTitle>
+                                        <CardDescription>
+                                            {subscription?.status === 'active' ? 'Active' : 'Inactive'} •
+                                            {subscription?.expires_at ? ` Expires ${format(new Date(subscription.expires_at), 'PPP')}` : ' No expiry'}
+                                        </CardDescription>
+                                    </div>
+                                    <Badge className={currentPlan.color}>
+                                        {subscription?.status?.toUpperCase()}
+                                    </Badge>
                                 </div>
-                                <Progress value={usagePercentage} className="h-2" />
-                                {usagePercentage > 80 && (
-                                    <div className="flex items-center gap-2 text-sm text-amber-500 mt-2">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span>You're approaching your event limit</span>
+                            </CardHeader>
+                            <CardContent>
+                                {eventsLimit !== null && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Events Used</span>
+                                            <span className="font-semibold">{eventsUsed} / {eventsLimit}</span>
+                                        </div>
+                                        <Progress value={usagePercentage} className="h-2" />
+                                        {usagePercentage > 80 && (
+                                            <div className="flex items-center gap-2 text-sm text-amber-500 mt-2">
+                                                <AlertCircle className="w-4 h-4" />
+                                                <span>You're approaching your event limit</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </div>
-                        )}
-                        {eventsLimit === null && (
-                            <p className="text-sm text-muted-foreground">Unlimited events available</p>
-                        )}
-                    </CardContent>
-                </Card>
+                                {eventsLimit === null && (
+                                    <p className="text-sm text-muted-foreground">Unlimited events available</p>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                {/* Stats Grid */}
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    <Card className="border-2 border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Ticket className="w-5 h-5 text-cyan-400" />
-                                Total Events
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">{events.length}</p>
-                            <p className="text-sm text-muted-foreground mt-1">Events created</p>
-                        </CardContent>
-                    </Card>
+                        {/* Stats Grid */}
+                        <div className="grid md:grid-cols-3 gap-6 mb-8">
+                            <Card className="border-2 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <Ticket className="w-5 h-5 text-cyan-400" />
+                                        Total Events
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-4xl font-bold">{events.length}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Events created</p>
+                                </CardContent>
+                            </Card>
 
-                    <Card className="border-2 border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <QrCode className="w-5 h-5 text-purple-400" />
-                                Tickets Sold
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">{totalTicketsSold}</p>
-                            <p className="text-sm text-muted-foreground mt-1">Total tickets issued</p>
-                        </CardContent>
-                    </Card>
+                            <Card className="border-2 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <QrCode className="w-5 h-5 text-purple-400" />
+                                        Tickets Sold
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-4xl font-bold">{totalTicketsSold}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Total tickets issued</p>
+                                </CardContent>
+                            </Card>
 
-                    <Card className="border-2 border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <DollarSign className="w-5 h-5 text-green-400" />
-                                Total Revenue
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold">₹{totalRevenue.toFixed(2)}</p>
-                            <p className="text-sm text-muted-foreground mt-1">Across all events</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                            <Card className="border-2 border-primary/20">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <DollarSign className="w-5 h-5 text-green-400" />
+                                        Total Revenue
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-4xl font-bold">₹{totalRevenue.toFixed(2)}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Across all events</p>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                {/* Quick Actions */}
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                    <Card className="border-2 border-cyan-500/30 hover:border-cyan-500/50 transition-all cursor-pointer" onClick={() => navigate('/events')}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-cyan-400" />
-                                My Events
-                            </CardTitle>
-                            <CardDescription>View and manage all your events</CardDescription>
-                        </CardHeader>
-                    </Card>
+                        {/* Quick Actions */}
+                        <div className="grid md:grid-cols-2 gap-6 mb-8">
+                            <Card className="border-2 border-cyan-500/30 hover:border-cyan-500/50 transition-all cursor-pointer" onClick={() => navigate('/events')}>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Calendar className="w-5 h-5 text-cyan-400" />
+                                        My Events
+                                    </CardTitle>
+                                    <CardDescription>View and manage all your events</CardDescription>
+                                </CardHeader>
+                            </Card>
 
-                    <Card className="border-2 border-purple-500/30 hover:border-purple-500/50 transition-all cursor-pointer" onClick={() => navigate('/bank-accounts')}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <CreditCard className="w-5 h-5 text-purple-400" />
-                                Bank Accounts
-                            </CardTitle>
-                            <CardDescription>Manage UPI and bank accounts for payouts</CardDescription>
-                        </CardHeader>
-                    </Card>
-                </div>
+                            <Card className="border-2 border-purple-500/30 hover:border-purple-500/50 transition-all cursor-pointer" onClick={() => navigate('/bank-accounts')}>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <CreditCard className="w-5 h-5 text-purple-400" />
+                                        Bank Accounts
+                                    </CardTitle>
+                                    <CardDescription>Manage UPI and bank accounts for payouts</CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </div>
 
-                {/* Recent Events */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5" />
-                            Recent Events
-                        </CardTitle>
-                        <CardDescription>Your latest created events</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {events.length === 0 ? (
-                            <div className="text-center py-8">
-                                <p className="text-muted-foreground mb-4">No events created yet</p>
-                                <Link to="/create-event">
-                                    <Button>
-                                        <Calendar className="w-4 h-4 mr-2" />
-                                        Create Your First Event
-                                    </Button>
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {events.slice(0, 5).map((event) => (
-                                    <div
-                                        key={event.id}
-                                        className="flex justify-between items-center p-4 rounded-lg border border-border hover:border-primary/50 transition-all cursor-pointer"
-                                        onClick={() => navigate(`/event/${event.id}/tickets`)}
-                                    >
-                                        <div>
-                                            <h4 className="font-semibold">{event.title}</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                {format(new Date(event.event_date), 'PPP')} • {event.venue}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-semibold">{event.tickets_issued || 0} tickets</p>
-                                            {event.total_revenue > 0 && (
-                                                <p className="text-sm text-green-400">₹{Number(event.total_revenue).toFixed(2)}</p>
-                                            )}
-                                        </div>
+                        {/* Recent Events */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5" />
+                                    Recent Events
+                                </CardTitle>
+                                <CardDescription>Your latest created events</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {events.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-muted-foreground mb-4">No events created yet</p>
+                                        <Link to="/create-event">
+                                            <Button>
+                                                <Calendar className="w-4 h-4 mr-2" />
+                                                Create Your First Event
+                                            </Button>
+                                        </Link>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {events.slice(0, 5).map((event) => (
+                                            <div
+                                                key={event.id}
+                                                className="flex justify-between items-center p-4 rounded-lg border border-border hover:border-primary/50 transition-all cursor-pointer"
+                                                onClick={() => navigate(`/event/${event.id}/tickets`)}
+                                            >
+                                                <div>
+                                                    <h4 className="font-semibold">{event.title}</h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {format(new Date(event.event_date), 'PPP')} • {event.venue}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-semibold">{event.tickets_issued || 0} tickets</p>
+                                                    {event.total_revenue > 0 && (
+                                                        <p className="text-sm text-green-400">₹{Number(event.total_revenue).toFixed(2)}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="security">
+                        <SecuritySettings />
+                    </TabsContent>
+                </Tabs>
             </div>
-        </div>
+        </div >
     );
 };
 
