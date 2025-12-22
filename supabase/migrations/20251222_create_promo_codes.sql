@@ -13,24 +13,26 @@ CREATE TABLE IF NOT EXISTS public.promo_codes (
     valid_until TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    CONSTRAINT unique_code_per_event UNIQUE (code, event_id) -- Or just UNIQUE(code) if global uniqueness desired. Let's enforce Global Uniqueness for simplicity? 
-    -- UI generates 8 char random code.
-    -- If event_id is null, it's global.
-    -- Let's make code UNIQUE globally to avoid confusion.
+    CONSTRAINT unique_code_per_event UNIQUE (code, event_id)
 );
 
-ALTER TABLE public.promo_codes ADD CONSTRAINT promo_codes_code_key UNIQUE (code);
-
+-- Safe Add Constraint (Idempotent)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'promo_codes_code_key') THEN
+        ALTER TABLE public.promo_codes ADD CONSTRAINT promo_codes_code_key UNIQUE (code);
+    END IF;
+END $$;
 
 -- Enable RLS
 ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
 
--- Policies
--- 1. Organizers can manage their own codes
+-- Policies (Drop first to allow re-run)
+DROP POLICY IF EXISTS "Users can manage their own promo codes" ON public.promo_codes;
 CREATE POLICY "Users can manage their own promo codes" ON public.promo_codes
     USING (user_id = auth.uid())
     WITH CHECK (user_id = auth.uid());
 
--- 2. Anyone can read active codes (for applying at checkout)
+DROP POLICY IF EXISTS "Anyone can read active promo codes" ON public.promo_codes;
 CREATE POLICY "Anyone can read active promo codes" ON public.promo_codes
     FOR SELECT USING (true);
