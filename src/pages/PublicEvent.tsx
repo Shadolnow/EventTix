@@ -25,6 +25,7 @@ import { ReferralBanner } from '@/components/ReferralProgram';
 import { sendTicketViaWhatsApp } from '@/utils/whatsapp';
 import confetti from 'canvas-confetti';
 import { ReviewSection } from '@/components/ReviewSection';
+import { WaitlistForm } from '@/components/WaitlistForm';
 
 interface SelectedTier {
   id: string;
@@ -52,6 +53,7 @@ const PublicEvent = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [selectedTier, setSelectedTier] = useState<SelectedTier | null>(null);
   const [hasTiers, setHasTiers] = useState(false);
+  const [ticketsSold, setTicketsSold] = useState(0);
 
   // Payment States
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -97,6 +99,15 @@ const PublicEvent = () => {
       if (bankData) {
         setBankDetails(bankData);
       }
+
+      // Fetch Ticket Count
+      const { count } = await supabase
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .neq('status', 'cancelled'); // Don't count cancelled tickets
+
+      setTicketsSold(count || 0);
     };
 
     fetchEvent();
@@ -633,13 +644,8 @@ const PublicEvent = () => {
               />
             )}
 
-            {(event.capacity && event.tickets_issued >= event.capacity) ? (
-              <Alert variant="destructive" className="mb-8">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-lg font-semibold">
-                  Sold Out
-                </AlertDescription>
-              </Alert>
+            {(event.capacity && ticketsSold >= event.capacity) ? (
+              <WaitlistForm eventId={eventId!} />
             ) : (
               <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
                 <CardHeader>
