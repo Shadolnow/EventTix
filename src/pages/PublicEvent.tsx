@@ -24,6 +24,7 @@ import { PromoCodeInput, PriceDisplay } from '@/components/PromoCode';
 import { ReferralBanner } from '@/components/ReferralProgram';
 import { sendTicketViaWhatsApp } from '@/utils/whatsapp';
 import confetti from 'canvas-confetti';
+import { ReviewSection } from '@/components/ReviewSection';
 
 interface SelectedTier {
   id: string;
@@ -755,6 +756,7 @@ const PublicEvent = () => {
         {/* Testimonials Section */}
         <div className="mt-12">
           <Testimonials />
+          <ReviewSection eventId={eventId!} eventEnded={event ? new Date(event.event_date) < new Date() : false} />
         </div>
 
         {/* Refund Policy Section */}
