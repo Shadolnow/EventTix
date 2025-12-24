@@ -12,10 +12,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Minus, ShoppingCart, Trash2, Copy, ArrowLeft } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, Minus, ShoppingCart, Trash2, Copy, ArrowLeft, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { TicketCard } from './TicketCard';
 
 interface BulkTicketTabProps {
     eventId: string;
@@ -526,43 +528,70 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                     </CardContent>
                 </Card>
             )}
-            {/* Success Dialog */}
+            {/* Success Dialog - Show All Tickets */}
             <Dialog open={showSuccessDialog} onOpenChange={(open) => {
                 if (!open && purchasedTickets.length > 0) {
                     onSuccess(purchasedTickets);
                 }
                 setShowSuccessDialog(open);
             }}>
-                <DialogContent className="sm:max-w-md border-2 border-primary/20">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] border-2 border-primary/20">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl text-center text-primary">🎉 Order Placed Successfully!</DialogTitle>
+                        <DialogTitle className="text-2xl text-center text-primary">
+                            🎉 {purchasedTickets.length} Ticket{purchasedTickets.length > 1 ? 's' : ''} Created!
+                        </DialogTitle>
                         <DialogDescription className="text-center pt-2 text-base">
-                            YOU will receive confirmation of your ticket purchase soon.
+                            All tickets sent to {formData.email || 'your email'}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
-                        <div className="p-4 bg-muted/50 rounded-lg space-y-3 text-center">
-                            <p className="font-medium text-foreground">
-                                For immediate confirmation, you can call us at:
-                            </p>
-                            <a href="tel:7507066880" className="text-2xl font-bold text-primary hover:underline block">
-                                7507066880
-                            </a>
+                    <ScrollArea className="max-h-[55vh] pr-4">
+                        <div className="space-y-4 py-2">
+                            {purchasedTickets.map((ticket) => (
+                                <TicketCard
+                                    key={ticket.id}
+                                    ticket={{
+                                        ...ticket,
+                                        events: event
+                                    }}
+                                    compact={true}
+                                    showActions={false}
+                                />
+                            ))}
+                        </div>
+                    </ScrollArea>
+
+                    <div className="space-y-3 pt-2">
+                        <div className="p-3 border border-blue-500/20 bg-blue-500/10 rounded-lg flex gap-3 text-sm">
+                            <span className="text-xl">💡</span>
+                            <p className="text-foreground">Scroll up to see all tickets. Each person gets their own QR code!</p>
                         </div>
 
-                        <div className="p-3 border border-yellow-500/20 bg-yellow-500/10 rounded-lg flex gap-3 text-sm text-yellow-600 dark:text-yellow-400">
-                            <span className="text-xl">💡</span>
-                            <p>Please keep your ticket and UPI reference details with you for verification.</p>
+                        <div className="p-3 bg-muted/50 rounded-lg text-center">
+                            <p className="text-xs text-muted-foreground mb-1">Need help?</p>
+                            <a href="tel:7507066880" className="text-lg font-bold text-primary hover:underline">
+                                📞 7507066880
+                            </a>
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-center">
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button
-                            className="w-full sm:w-auto min-w-[150px]"
-                            onClick={() => onSuccess(purchasedTickets)}
+                            className="w-full"
+                            onClick={() => {
+                                setShowSuccessDialog(false);
+                                window.print();
+                            }}
+                            variant="outline"
                         >
-                            Okay, Got it
+                            <Download className="mr-2 h-4 w-4" />
+                            Print All Tickets
+                        </Button>
+                        <Button
+                            className="w-full"
+                            onClick={() => setShowSuccessDialog(false)}
+                        >
+                            Done
                         </Button>
                     </DialogFooter>
                 </DialogContent>
