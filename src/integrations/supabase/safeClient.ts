@@ -2,12 +2,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-// Supabase project configuration
+// Lovable Cloud project configuration
 const LOVABLE_CLOUD_CONFIG = {
-  projectId: "dmksigdpcbdvyejtedju",
-  url: "https://dmksigdpcbdvyejtedju.supabase.co",
+  projectId: "kszyvgqhzguyiibpfpwo",
+  url: "https://kszyvgqhzguyiibpfpwo.supabase.co",
   // Note: If you face auth issues, please replace this anonKey with the 'anon public' key from your Supabase Settings -> API
-  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRta3NpZ2RwY2JkdnllanRlZGp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQxNTA0MTIsImV4cCI6MjA0OTcyNjQxMn0.G5I3_YJdkFPzSDuP5MzkKQZs0ZALaVsN1HWcAm6sSBA",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtzenl2Z3Foemd1eWlpYnBmcHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMDc0OTUsImV4cCI6MjA3ODY4MzQ5NX0.yZUIxyL3XSHCfljaJvO5PQ9-qhzQStSCG85aZKnqups",
 };
 
 type SupabaseEnv = {
