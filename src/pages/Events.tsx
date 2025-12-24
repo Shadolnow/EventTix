@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import QRCodeDialog from '@/components/QRCodeDialog';
+import { HelpSection } from '@/components/HelpSection';
 
 const Events = () => {
   const { user } = useAuth();
@@ -87,6 +88,19 @@ const Events = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Code Help Section */}
+        <HelpSection
+          title="How to Share Your Event"
+          variant="blue"
+          items={[
+            <span key="1"><strong>QR Codes:</strong> Each event has a unique QR code attendees can scan to claim tickets</span>,
+            <span key="2"><strong>Download:</strong> Click "Download" to get PNG or PDF format for posters/social media</span>,
+            <span key="3"><strong>Share Link:</strong> Use "Share" to send event link via WhatsApp, email, or copy link</span>,
+            <span key="4"><strong>Public Page:</strong> All events listed on Public Events page for easy discovery</span>
+          ]}
+          className="mb-8"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {events.map((event) => (
