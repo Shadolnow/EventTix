@@ -143,6 +143,18 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                 throw new Error('Failed to create any tickets');
             }
 
+            // Fetch created tickets with event data for proper display
+            const { data: ticketsWithEvent, error: fetchError } = await supabase
+                .from('tickets')
+                .select('*, events(*), ticket_tiers(*)')
+                .in('id', createdTickets.map(t => t.id));
+
+            if (fetchError) {
+                console.error('Error fetching tickets:', fetchError);
+            }
+
+            const finalTickets = ticketsWithEvent || createdTickets;
+
             // Send emails for created tickets (Fire and forget to avoid blocking UI significantly)
             // We process them in parallel
             Promise.allSettled(createdTickets.map(ticket =>
@@ -162,7 +174,7 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
             });
 
             // Success!
-            toast.success(`🎉 ${createdTickets.length} tickets created successfully!`);
+            toast.success(`🎉 ${finalTickets.length} tickets created successfully!`);
 
             // Confetti
             confetti({
@@ -173,7 +185,7 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
             });
 
             // Store tickets and show success dialog
-            setPurchasedTickets(createdTickets);
+            setPurchasedTickets(finalTickets);
             setQuantities({});
             setFormData({ name: '', email: '', phone: '' });
             setShowSuccessDialog(true);
@@ -550,12 +562,9 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                             {purchasedTickets.map((ticket) => (
                                 <TicketCard
                                     key={ticket.id}
-                                    ticket={{
-                                        ...ticket,
-                                        events: event
-                                    }}
-                                    compact={true}
-                                    showActions={false}
+                                    ticket={ticket}
+                                    compact={false}
+                                    showActions={true}
                                 />
                             ))}
                         </div>
