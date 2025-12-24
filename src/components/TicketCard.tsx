@@ -20,6 +20,9 @@ interface TicketCardProps {
     is_validated: boolean;
     tier_id?: string;
     tier_name?: string;
+    batch_id?: string; // Batch tracking
+    quantity_in_batch?: number;
+    ticket_number_in_batch?: number;
     ticket_tiers?: {
       name: string;
       price: number;
@@ -140,9 +143,17 @@ export const TicketCard = ({ ticket, compact = false, showActions = true }: Tick
           <div className="text-center mb-8 relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#00E5FF] blur-[80px] opacity-10 pointer-events-none" />
 
-            <Badge variant="outline" className="mb-3 border-[#00E5FF]/30 text-[#00E5FF] bg-[#00E5FF]/5 tracking-[0.2em] text-[10px] py-0.5 px-3 uppercase">
-              {tierName}
-            </Badge>
+            <div className="flex gap-2 justify-center mb-3">
+              <Badge variant="outline" className="border-[#00E5FF]/30 text-[#00E5FF] bg-[#00E5FF]/5 tracking-[0.2em] text-[10px] py-0.5 px-3 uppercase">
+                {tierName}
+              </Badge>
+              {/* Batch Information Badge */}
+              {ticket.batch_id && ticket.quantity_in_batch && ticket.quantity_in_batch > 1 && (
+                <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/5 tracking-[0.2em] text-[10px] py-0.5 px-3 uppercase">
+                  {ticket.ticket_number_in_batch} of {ticket.quantity_in_batch}
+                </Badge>
+              )}
+            </div>
 
             <h2 className="relative text-4xl font-black italic uppercase tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/70 drop-shadow-[0_0_15px_rgba(0,229,255,0.5)]">
               {ticket.events.title}

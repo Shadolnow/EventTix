@@ -95,6 +95,10 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
             setLoading(true);
             const createdTickets = [];
 
+            // Generate a unique batch ID for this bulk purchase
+            const batchId = crypto.randomUUID();
+            let ticketNumberInBatch = 1;
+
             // Create tickets for each tier quantity
             for (const [tierId, quantity] of Object.entries(quantities)) {
                 for (let i = 0; i < quantity; i++) {
@@ -116,7 +120,11 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                             tier_id: tierId,
                             payment_ref_id: refId,
                             payment_status: status,
-                            payment_method: paymentMethod
+                            payment_method: paymentMethod,
+                            // Batch tracking fields
+                            batch_id: batchId,
+                            quantity_in_batch: totalItems,
+                            ticket_number_in_batch: ticketNumberInBatch++
                         })
                         .select()
                         .single();
