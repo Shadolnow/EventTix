@@ -82,6 +82,12 @@ const Index = () => {
               </>
             ) : (
               <>
+                <Link to="/my-tickets">
+                  <Button variant="ghost" size="sm">
+                    <Ticket className="w-4 h-4 mr-2" />
+                    My Tickets
+                  </Button>
+                </Link>
                 <Link to="/pricing">
                   <Button variant="ghost" size="sm">
                     <Building2 className="w-4 h-4 mr-2" />
