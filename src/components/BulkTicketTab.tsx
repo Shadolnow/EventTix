@@ -562,6 +562,20 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                     </ScrollArea>
 
                     <div className="space-y-3 pt-2">
+                        {/* Simple Help Section */}
+                        <div className="p-4 border border-green-500/20 bg-green-500/5 rounded-lg space-y-2">
+                            <p className="font-semibold text-sm text-foreground flex items-center gap-2">
+                                <span className="text-lg">ℹ️</span>
+                                How Your Tickets Work:
+                            </p>
+                            <div className="text-sm text-muted-foreground space-y-1.5 ml-7">
+                                <p>✓ <strong>Each person gets their own QR code</strong> - Share tickets individually</p>
+                                <p>✓ <strong>Numbers like "1 of 3"</strong> show this is a group booking</p>
+                                <p>✓ <strong>All tickets work independently</strong> - No need to arrive together</p>
+                                <p>✓ <strong>Check your email</strong> - Each ticket sent separately for easy forwarding</p>
+                            </div>
+                        </div>
+
                         <div className="p-3 border border-blue-500/20 bg-blue-500/10 rounded-lg flex gap-3 text-sm">
                             <span className="text-xl">💡</span>
                             <p className="text-foreground">Scroll up to see all tickets. Each person gets their own QR code!</p>
