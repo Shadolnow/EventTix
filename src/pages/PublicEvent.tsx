@@ -836,26 +836,6 @@ const PublicEvent = () => {
                           </p>
                         </div>
 
-                        {/* UPI Reference Field - Only show for paid events */}
-                        {!event.is_free && (
-                          <div className="space-y-2">
-                            <Label htmlFor="upi-ref" className="text-sm font-semibold">
-                              UPI Transaction Reference (Optional)
-                            </Label>
-                            <Input
-                              id="upi-ref"
-                              type="text"
-                              placeholder="e.g., 434512345678 or UPI/CR/..."
-                              value={formData.upiRef}
-                              onChange={(e) => setFormData({ ...formData, upiRef: e.target.value })}
-                              className="font-mono"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              💡 After paying, paste your UPI transaction ID for faster verification
-                            </p>
-                          </div>
-                        )}
-
                         <Button
                           type="submit"
                           className="w-full btn-mobile-primary relative overflow-hidden group bg-gradient-to-r from-primary to-accent"
