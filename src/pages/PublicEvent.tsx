@@ -227,8 +227,12 @@ const PublicEvent = () => {
       sessionStorage.setItem(BOOKING_SESSION_KEY, JSON.stringify(bookingData));
       localStorage.setItem(PENDING_TICKET_KEY, JSON.stringify(bookingData));
 
-      // Send magic link via Supabase
-      const redirectUrl = `${window.location.origin}/event/${eventId}?verified=true`;
+      // Use production URL for magic link redirect
+      const isProduction = window.location.hostname !== 'localhost';
+      const baseUrl = isProduction
+        ? 'https://eventtix-psi.vercel.app'
+        : window.location.origin;
+      const redirectUrl = `${baseUrl}/event/${eventId}?verified=true`;
 
       const { error } = await supabase.auth.signInWithOtp({
         email: validated.email,
