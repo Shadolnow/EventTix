@@ -466,6 +466,35 @@ const PublicEvent = () => {
     toast.success('Event added to your calendar!');
   };
 
+  // Helper function to format social media URLs
+  const formatSocialUrl = (platform: string, value: string): string => {
+    if (!value) return '';
+
+    // If already a full URL, return as is
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    // Remove @ symbol if present
+    const username = value.replace('@', '');
+
+    // Format based on platform
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        return `https://instagram.com/${username}`;
+      case 'facebook':
+        return `https://facebook.com/${username}`;
+      case 'twitter':
+        return `https://twitter.com/${username}`;
+      case 'linkedin':
+        return `https://linkedin.com/in/${username}`;
+      case 'youtube':
+        return `https://youtube.com/@${username}`;
+      default:
+        return value;
+    }
+  };
+
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -715,32 +744,32 @@ const PublicEvent = () => {
             <CardContent>
               <div className="flex flex-wrap gap-3">
                 {event.social_links.instagram && (
-                  <a href={event.social_links.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity">
+                  <a href={formatSocialUrl('instagram', event.social_links.instagram)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity">
                     <Instagram className="w-5 h-5" /> Instagram
                   </a>
                 )}
                 {event.social_links.facebook && (
-                  <a href={event.social_links.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:opacity-90 transition-opacity">
+                  <a href={formatSocialUrl('facebook', event.social_links.facebook)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:opacity-90 transition-opacity">
                     <Facebook className="w-5 h-5" /> Facebook
                   </a>
                 )}
                 {event.social_links.twitter && (
-                  <a href={event.social_links.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white hover:opacity-90 transition-opacity">
+                  <a href={formatSocialUrl('twitter', event.social_links.twitter)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white hover:opacity-90 transition-opacity">
                     <Twitter className="w-5 h-5" /> Twitter/X
                   </a>
                 )}
                 {event.social_links.linkedin && (
-                  <a href={event.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 text-white hover:opacity-90 transition-opacity">
+                  <a href={formatSocialUrl('linkedin', event.social_links.linkedin)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 text-white hover:opacity-90 transition-opacity">
                     <Linkedin className="w-5 h-5" /> LinkedIn
                   </a>
                 )}
                 {event.social_links.youtube && (
-                  <a href={event.social_links.youtube} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:opacity-90 transition-opacity">
+                  <a href={formatSocialUrl('youtube', event.social_links.youtube)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:opacity-90 transition-opacity">
                     <Youtube className="w-5 h-5" /> YouTube
                   </a>
                 )}
                 {event.social_links.website && (
-                  <a href={event.social_links.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-foreground border border-border hover:bg-accent transition-colors">
+                  <a href={formatSocialUrl('website', event.social_links.website)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 text-white hover:opacity-90 transition-opacity">
                     <Globe className="w-5 h-5" /> Website
                   </a>
                 )}
