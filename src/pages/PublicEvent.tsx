@@ -70,6 +70,7 @@ const PublicEvent = () => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [transactionId, setTransactionId] = useState("");
+  const [upiTransactionRef, setUpiTransactionRef] = useState(""); // For payment dialog input
 
   // Magic Link Verification States
   const [verificationSent, setVerificationSent] = useState(false);
@@ -768,238 +769,365 @@ const PublicEvent = () => {
             {(event.capacity && ticketsSold >= event.capacity) ? (
               <WaitlistForm eventId={eventId!} />
             ) : (
-              <Tabs defaultValue="single" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="single">🎫 Single Ticket</TabsTrigger>
-                  <TabsTrigger value="bulk">🎟️ Bulk Tickets</TabsTrigger>
-                </TabsList>
+              <>
+                <Tabs defaultValue="single" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="single">🎫 Single Ticket</TabsTrigger>
+                    <TabsTrigger value="bulk">🎟️ Bulk Tickets</TabsTrigger>
+                  </TabsList>
 
-                {/* Single Ticket Tab */}
-                <TabsContent value="single">
-                  <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
-                    <CardHeader>
-                      <CardTitle className="text-2xl flex items-center gap-2">
-                        <Ticket className="w-6 h-6 text-primary" />
-                        {event.is_free ? 'Register for Free' : 'Buy Ticket'}
-                      </CardTitle>
-                      <CardDescription>
-                        Enter your details to book your spot.
-                      </CardDescription>
+                  {/* Single Ticket Tab */}
+                  <TabsContent value="single">
+                    <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-2xl flex items-center gap-2">
+                          <Ticket className="w-6 h-6 text-primary" />
+                          {event.is_free ? 'Register for Free' : 'Buy Ticket'}
+                        </CardTitle>
+                        <CardDescription>
+                          Enter your details to book your spot.
+                        </CardDescription>
 
-                      {/* Help Button for Single Ticket */}
-                      <div className="mt-4">
-                        <HelpDialog
-                          title="How to Buy a Single Ticket"
-                          description="Quick guide to purchase your event ticket"
-                          variant="inline"
-                          buttonText="Need help with ticket purchase?"
-                          sections={[
-                            {
-                              heading: "Fill Your Details",
-                              content: "Provide your information to register for the event",
-                              steps: [
-                                "Enter your Full Name",
-                                "Provide a valid Email (ticket will be sent here)",
-                                "Add your Phone number (WhatsApp preferred)",
-                                "Create a 4-6 digit Security PIN (you choose it!)"
-                              ]
-                            },
-                            {
-                              heading: "Payment (For Paid Events)",
-                              content: "Complete your payment securely",
-                              steps: [
-                                "Click 'Proceed to Payment'",
-                                "Scan the UPI QR code with any UPI app",
-                                "Complete the payment",
-                                "Copy and paste your UPI transaction ID",
-                                "Click 'I've Paid' to generate your ticket"
-                              ]
-                            },
-                            {
-                              heading: "Retrieve Your Ticket Later",
-                              content: "Access your ticket anytime from 'My Tickets' page using:",
-                              steps: [
-                                "Your Email address",
-                                "Your Phone number",
-                                "Your Security PIN",
-                                "All three are required for security"
-                              ]
-                            }
-                          ]}
+                        {/* Help Button for Single Ticket */}
+                        <div className="mt-4">
+                          <HelpDialog
+                            title="How to Buy a Single Ticket"
+                            description="Quick guide to purchase your event ticket"
+                            variant="inline"
+                            buttonText="Need help with ticket purchase?"
+                            sections={[
+                              {
+                                heading: "Fill Your Details",
+                                content: "Provide your information to register for the event",
+                                steps: [
+                                  "Enter your Full Name",
+                                  "Provide a valid Email (ticket will be sent here)",
+                                  "Add your Phone number (WhatsApp preferred)",
+                                  "Create a 4-6 digit Security PIN (you choose it!)"
+                                ]
+                              },
+                              {
+                                heading: "Payment (For Paid Events)",
+                                content: "Complete your payment securely",
+                                steps: [
+                                  "Click 'Proceed to Payment'",
+                                  "Scan the UPI QR code with any UPI app",
+                                  "Complete the payment",
+                                  "Copy and paste your UPI transaction ID",
+                                  "Click 'I've Paid' to generate your ticket"
+                                ]
+                              },
+                              {
+                                heading: "Retrieve Your Ticket Later",
+                                content: "Access your ticket anytime from 'My Tickets' page using:",
+                                steps: [
+                                  "Your Email address",
+                                  "Your Phone number",
+                                  "Your Security PIN",
+                                  "All three are required for security"
+                                ]
+                              }
+                            ]}
+                          />
+                        </div>
+
+                        {/* Checkout Progress Indicator */}
+                        <CheckoutProgress
+                          currentStep={claimedTicket ? 'confirm' : 'details'}
                         />
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleClaim} className="space-y-4">
+                          {hasTiers && (
+                            <TierSelector
+                              eventId={eventId!}
+                              isFreeEvent={event.is_free}
+                              selectedTierId={selectedTier?.id || null}
+                              onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
+                              discountPercent={event.discount_percent || 0}
+                            />
+                          )}
+
+                          {!event.is_free && !hasTiers && (
+                            <div className="p-4 bg-muted rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">Standard Ticket</span>
+                                <div className="text-right">
+                                  {event.discount_percent > 0 && (
+                                    <div className="text-xs text-muted-foreground line-through mb-1">
+                                      ₹{event.ticket_price}
+                                    </div>
+                                  )}
+                                  <span className="text-xl font-bold text-primary">
+                                    ₹{event.discount_percent > 0
+                                      ? Math.round(event.ticket_price * (1 - event.discount_percent / 100))
+                                      : event.ticket_price
+                                    }
+                                  </span>
+                                  {event.discount_percent > 0 && (
+                                    <div className="text-xs text-green-600 font-semibold mt-1">
+                                      {event.discount_percent}% OFF
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="name">Full Name</Label>
+                              <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                                placeholder="John Doe"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="phone">Phone (WhatsApp)</Label>
+                              <Input
+                                id="phone"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                required
+                                placeholder="+91 9876543210"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              required
+                              placeholder="john@example.com"
+                            />
+                            <p className="text-xs text-muted-foreground">We'll send your ticket to this email.</p>
+                          </div>
+
+                          {/* Security PIN Field - Matches Bulk Ticket */}
+                          <div className="space-y-2">
+                            <Label htmlFor="security-pin" className="text-primary font-semibold">
+                              🔒 Security PIN (4-6 digits) *
+                            </Label>
+                            <Input
+                              id="security-pin"
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="Enter your 4-6 digit PIN"
+                              value={formData.securityPin}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, ''); // Only digits
+                                setFormData({ ...formData, securityPin: value });
+                              }}
+                              className="text-center text-2xl tracking-widest font-bold"
+                              required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              ⚠️ <strong>Important:</strong> You'll need this PIN + email + phone to retrieve your ticket later
+                            </p>
+                          </div>
+
+                          {/* Email Verification Status */}
+                          {verificationSent && !isEmailVerified && (
+                            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-500/50 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
+                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                                    ✉️ Verification Email Sent!
+                                  </h4>
+                                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                                    We've sent a magic link to <strong>{verificationEmail}</strong>
+                                  </p>
+                                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                                    Click the link in your email to verify and complete your booking. The link is valid for 60 minutes.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {isEmailVerified && (
+                            <div className="p-3 bg-green-50 dark:bg-green-950/30 border-2 border-green-500/50 rounded-lg flex items-center gap-2">
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                              <span className="text-sm font-semibold text-green-800 dark:text-green-200">
+                                ✓ Email Verified! You can now complete your booking.
+                              </span>
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            className="w-full btn-mobile-primary relative overflow-hidden group bg-gradient-to-r from-primary to-accent"
+                            disabled={loading || (hasTiers && !selectedTier)}
+                          >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                              {loading ? 'Processing...' : (
+                                <>
+                                  {event.is_free ? '🎫 Get My Free Ticket' : '💳 Proceed to Payment'} <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
+                                </>
+                              )}
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                          </Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  {/* Bulk Ticket Tab */}
+                  <TabsContent value="bulk">
+                    <BulkTicketTab
+                      eventId={eventId!}
+                      event={event}
+                      onSuccess={(tickets) => {
+                        if (tickets.length > 0) {
+                          setClaimedTicket({
+                            ...tickets[0],
+                            events: event
+                          });
+                        }
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
+
+                {/* Payment Dialog for Single Tickets */}
+                <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl">Complete Your Payment</DialogTitle>
+                      <DialogDescription>
+                        Scan the QR code or use UPI ID to make payment
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6 py-4">
+                      {/* Amount Display */}
+                      <div className="text-center p-4 bg-primary/10 rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
+                        <p className="text-3xl font-bold text-primary">
+                          ₹{selectedTier ? selectedTier.price : event.ticket_price}
+                        </p>
                       </div>
 
-                      {/* Checkout Progress Indicator */}
-                      <CheckoutProgress
-                        currentStep={claimedTicket ? 'confirm' : 'details'}
-                      />
-                    </CardHeader>
-                    <CardContent>
-                      <form onSubmit={handleClaim} className="space-y-4">
-                        {hasTiers && (
-                          <TierSelector
-                            eventId={eventId!}
-                            isFreeEvent={event.is_free}
-                            selectedTierId={selectedTier?.id || null}
-                            onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
-                            discountPercent={event.discount_percent || 0}
-                          />
-                        )}
-
-                        {!event.is_free && !hasTiers && (
-                          <div className="p-4 bg-muted rounded-lg">
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">Standard Ticket</span>
-                              <div className="text-right">
-                                {event.discount_percent > 0 && (
-                                  <div className="text-xs text-muted-foreground line-through mb-1">
-                                    ₹{event.ticket_price}
-                                  </div>
-                                )}
-                                <span className="text-xl font-bold text-primary">
-                                  ₹{event.discount_percent > 0
-                                    ? Math.round(event.ticket_price * (1 - event.discount_percent / 100))
-                                    : event.ticket_price
-                                  }
-                                </span>
-                                {event.discount_percent > 0 && (
-                                  <div className="text-xs text-green-600 font-semibold mt-1">
-                                    {event.discount_percent}% OFF
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                              id="name"
-                              value={formData.name}
-                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                              required
-                              placeholder="John Doe"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone (WhatsApp)</Label>
-                            <Input
-                              id="phone"
-                              value={formData.phone}
-                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                              required
-                              placeholder="+91 9876543210"
+                      {/* QR Code */}
+                      {event.qr_code_url && (
+                        <div className="flex justify-center">
+                          <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 blur-xl rounded-2xl" />
+                            <img
+                              src={event.qr_code_url}
+                              alt="UPI QR Code"
+                              className="relative w-64 h-64 object-contain rounded-2xl border-2 border-border bg-white p-4"
                             />
                           </div>
                         </div>
+                      )}
 
+                      {/* UPI ID */}
+                      {event.upi_id && (
                         <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                            placeholder="john@example.com"
-                          />
-                          <p className="text-xs text-muted-foreground">We'll send your ticket to this email.</p>
-                        </div>
-
-                        {/* Security PIN Field - Matches Bulk Ticket */}
-                        <div className="space-y-2">
-                          <Label htmlFor="security-pin" className="text-primary font-semibold">
-                            🔒 Security PIN (4-6 digits) *
-                          </Label>
-                          <Input
-                            id="security-pin"
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={6}
-                            placeholder="Enter your 4-6 digit PIN"
-                            value={formData.securityPin}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, ''); // Only digits
-                              setFormData({ ...formData, securityPin: value });
-                            }}
-                            className="text-center text-2xl tracking-widest font-bold"
-                            required
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            ⚠️ <strong>Important:</strong> You'll need this PIN + email + phone to retrieve your ticket later
-                          </p>
-                        </div>
-
-                        {/* Email Verification Status */}
-                        {verificationSent && !isEmailVerified && (
-                          <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-500/50 rounded-lg">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
-                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-                                </svg>
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                                  ✉️ Verification Email Sent!
-                                </h4>
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                  We've sent a magic link to <strong>{verificationEmail}</strong>
-                                </p>
-                                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                                  Click the link in your email to verify and complete your booking. The link is valid for 60 minutes.
-                                </p>
-                              </div>
-                            </div>
+                          <Label className="text-sm font-semibold">Or pay using UPI ID</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={event.upi_id}
+                              readOnly
+                              className="font-mono text-base"
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(event.upi_id);
+                                toast.success('UPI ID copied!');
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {isEmailVerified && (
-                          <div className="p-3 bg-green-50 dark:bg-green-950/30 border-2 border-green-500/50 rounded-lg flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-semibold text-green-800 dark:text-green-200">
-                              ✓ Email Verified! You can now complete your booking.
-                            </span>
+                      {/* Payment Instructions */}
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <p className="font-semibold text-sm">Payment Steps:</p>
+                        <div className="space-y-1.5 text-sm text-muted-foreground">
+                          <div className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">1</span>
+                            <span>Open any UPI app (GPay, PhonePe, Paytm, etc.)</span>
                           </div>
-                        )}
+                          <div className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">2</span>
+                            <span>Scan the QR code or enter the UPI ID</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">3</span>
+                            <span>Complete the payment</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">4</span>
+                            <span><strong>Copy your UPI transaction ID</strong> and paste it below</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">5</span>
+                            <span>Click "I've Paid" to generate your ticket</span>
+                          </div>
+                        </div>
+                      </div>
 
-                        <Button
-                          type="submit"
-                          className="w-full btn-mobile-primary relative overflow-hidden group bg-gradient-to-r from-primary to-accent"
-                          disabled={loading || (hasTiers && !selectedTier)}
-                        >
-                          <span className="relative z-10 flex items-center justify-center gap-2">
-                            {loading ? 'Processing...' : (
-                              <>
-                                {event.is_free ? '🎫 Get My Free Ticket' : '💳 Proceed to Payment'} <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-                              </>
-                            )}
-                          </span>
-                          <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/20 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                        </Button>
-                      </form>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      {/* UPI Reference Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="upi-transaction-ref" className="text-sm font-semibold">
+                          UPI Transaction Reference (Optional but Recommended)
+                        </Label>
+                        <Input
+                          id="upi-transaction-ref"
+                          type="text"
+                          placeholder="e.g., 434512345678 or UPI/CR/..."
+                          value={upiTransactionRef}
+                          onChange={(e) => setUpiTransactionRef(e.target.value)}
+                          className="font-mono"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          💡 <strong>Enter your UPI transaction ID</strong> for faster verification. Find it in your payment app after completing payment.
+                        </p>
+                      </div>
 
-                {/* Bulk Ticket Tab */}
-                <TabsContent value="bulk">
-                  <BulkTicketTab
-                    eventId={eventId!}
-                    event={event}
-                    onSuccess={(tickets) => {
-                      if (tickets.length > 0) {
-                        setClaimedTicket({
-                          ...tickets[0],
-                          events: event
-                        });
-                      }
-                    }}
-                  />
-                </TabsContent>
-              </Tabs>
+                      {/* Confirm Button */}
+                      <Button
+                        onClick={async () => {
+                          // Update formData with UPI reference
+                          setFormData({ ...formData, upiRef: upiTransactionRef });
+                          // Close dialog
+                          setShowPaymentDialog(false);
+                          // Create ticket
+                          await createTicket('upi');
+                        }}
+                        disabled={loading}
+                        className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                      >
+                        {loading ? 'Creating Ticket...' : '✅ I\'ve Paid - Create Ticket'}
+                      </Button>
+
+                      {/* Contact Info */}
+                      <p className="text-xs text-center text-muted-foreground">
+                        💡 Call <span className="font-semibold text-primary">7507066880</span> to confirm or wait for verification
+                      </p>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
             )}
           </div>
         ) : (
