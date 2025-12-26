@@ -21,12 +21,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Search, Download, Filter, RefreshCw, Ticket, Mail } from 'lucide-react';
+import { ArrowLeft, Search, Download, Filter, RefreshCw, Ticket, Mail, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { TicketActions } from '@/components/TicketActions';
 import { TicketDetailDrawer } from '@/components/TicketDetailDrawer';
 import { cn } from '@/lib/utils';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const GlobalTickets = () => {
     const navigate = useNavigate();
@@ -76,6 +77,12 @@ const GlobalTickets = () => {
     useEffect(() => {
         fetchTickets();
     }, [user]);
+
+    // Pull-to-refresh functionality
+    const { isPulling, pullDistance, isRefreshing, showIndicator } = usePullToRefresh({
+        onRefresh: fetchTickets,
+        threshold: 80,
+    });
 
     const filteredTickets = tickets.filter(ticket => {
         const searchLower = searchTerm.toLowerCase();
@@ -160,7 +167,7 @@ const GlobalTickets = () => {
 
         setBulkSending(false);
         setSelectedTickets(new Set());
-        
+
         if (failCount === 0) {
             toast.success(`Sent ${successCount} ticket(s) successfully`);
         } else {
@@ -201,7 +208,39 @@ const GlobalTickets = () => {
     };
 
     return (
-        <div className="min-h-screen pb-20 md:pb-8 bg-background">
+        <div className="min-h-screen pb-20 md:pb-8 bg-background relative">
+            {/* Pull-to-Refresh Indicator */}
+            {showIndicator && (
+                <div
+                    className="fixed top-0 left-0 right-0 flex items-center justify-center bg-gradient-to-b from-background to-transparent z-50 transition-all duration-200"
+                    style={{
+                        height: `${Math.min(pullDistance, 80)}px`,
+                        opacity: Math.min(pullDistance / 80, 1)
+                    }}
+                >
+                    <div className="flex flex-col items-center gap-2 pt-4">
+                        {isRefreshing ? (
+                            <>
+                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                <p className="text-xs text-muted-foreground">Refreshing...</p>
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw
+                                    className="w-6 h-6 text-primary transition-transform"
+                                    style={{
+                                        transform: `rotate(${pullDistance * 4}deg)`
+                                    }}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {pullDistance >= 80 ? 'Release to refresh' : 'Pull to refresh'}
+                                </p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="container mx-auto px-4 py-4 md:py-8 space-y-4 md:space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -251,7 +290,7 @@ const GlobalTickets = () => {
                                 </Button>
                             </div>
                         </div>
-                        
+
                         {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-3">
                             <div className="relative flex-1">
@@ -282,18 +321,18 @@ const GlobalTickets = () => {
                         {selectedTickets.size > 0 && (
                             <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
                                 <span className="text-sm font-medium">{selectedTickets.size} selected</span>
-                                <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={handleBulkEmail}
                                     disabled={bulkSending}
                                 >
                                     <Mail className="w-4 h-4 mr-2" />
                                     {bulkSending ? 'Sending...' : 'Email Selected'}
                                 </Button>
-                                <Button 
-                                    size="sm" 
-                                    variant="ghost" 
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
                                     onClick={() => setSelectedTickets(new Set())}
                                 >
                                     Clear
@@ -375,8 +414,8 @@ const GlobalTickets = () => {
                                         </TableRow>
                                     ) : (
                                         filteredTickets.map((ticket) => (
-                                            <TableRow 
-                                                key={ticket.id} 
+                                            <TableRow
+                                                key={ticket.id}
                                                 className={cn(
                                                     "cursor-pointer hover:bg-muted/50",
                                                     selectedTickets.has(ticket.id) && "bg-primary/5"
@@ -416,8 +455,8 @@ const GlobalTickets = () => {
                                                     {format(new Date(ticket.created_at), 'MMM d, HH:mm')}
                                                 </TableCell>
                                                 <TableCell onClick={(e) => e.stopPropagation()}>
-                                                    <TicketActions 
-                                                        ticket={ticket} 
+                                                    <TicketActions
+                                                        ticket={ticket}
                                                         onViewDetails={() => openTicketDetails(ticket)}
                                                     />
                                                 </TableCell>
