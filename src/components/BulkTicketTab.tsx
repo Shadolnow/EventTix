@@ -515,9 +515,9 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                                         setShowUpiPayment(true);
                                     }}
                                     disabled={loading}
-                                    className="h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                                    className="h-12 flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                                 >
-                                    {loading ? 'Processing...' : '💳 Pay via UPI'}
+                                    {loading ? 'Processing...' : '💳 Proceed to Payment'}
                                 </Button>
 
                                 <Button
