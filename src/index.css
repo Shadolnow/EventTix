@@ -150,6 +150,24 @@ All colors MUST be HSL.
   .safe-area-right {
     padding-right: env(safe-area-inset-right);
   }
+
+  /* ==========================================
+     SMOOTH THEME TRANSITIONS
+     ========================================== */
+
+  /* Apply smooth transitions when theme changes */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *:before,
+  .theme-transition *:after {
+    transition: background-color 300ms ease,
+      border-color 300ms ease,
+      color 300ms ease,
+      box-shadow 300ms ease,
+      fill 300ms ease,
+      stroke 300ms ease !important;
+    transition-delay: 0s !important;
+  }
 }
 
 @layer utilities {
