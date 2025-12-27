@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Upload, Video, Instagram, Facebook, Twitter, Globe, Linkedin, Youtube, Award } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Trash2, Upload, Video, Instagram, Facebook, Twitter, Globe, Linkedin, Youtube, Award, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
 import { TicketTiersManager } from './TicketTiersManager';
@@ -421,7 +421,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
             <Input
               id="eventDate"
               type="datetime-local"
-              value={eventDate ? new Date(eventDate).toISOString().slice(0, 16) : ''}
+              value={eventDate ? eventDate.slice(0, 16) : ''}
               onChange={(e) => setEventDate(e.target.value)}
               className="max-w-md"
             />
