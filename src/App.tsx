@@ -102,6 +102,7 @@ const AnimatedRoutes = () => {
 };
 
 import { CookieConsent } from "@/components/CookieConsent";
+import { TicketNotificationListener } from "@/components/Notifications/TicketNotificationListener";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -112,6 +113,7 @@ const App = () => (
           <Sonner />
           <CookieConsent />
           <BrowserRouter>
+            <TicketNotificationListener />
             <ParticleBackground />
             <div className="min-h-screen flex flex-col relative z-10 text-foreground">
               <AnimatedRoutes />
