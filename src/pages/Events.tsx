@@ -40,12 +40,20 @@ const Events = () => {
 
   const updateEventDate = async (eventId: string, newDate: string) => {
     try {
-      const { error } = await (supabase as any)
+      console.log('Updating event date:', { eventId, newDate });
+
+      const { data, error } = await (supabase as any)
         .from('events')
         .update({ event_date: newDate })
-        .eq('id', eventId);
+        .eq('id', eventId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Update successful:', data);
 
       // Update local state
       setEvents(prev => prev.map(e => e.id === eventId ? { ...e, event_date: newDate } : e));
@@ -53,7 +61,7 @@ const Events = () => {
       toast.success('Event date updated successfully!');
     } catch (error: any) {
       console.error('Error updating event date:', error);
-      toast.error('Failed to update date');
+      toast.error(`Failed to update date: ${error.message || 'Unknown error'}`);
     }
   };
 
