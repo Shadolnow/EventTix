@@ -322,22 +322,22 @@ const Scan = () => {
         await stopScanning();
       }
 
-      toast.info('Analyzing image...');
+      toast.info('📸 Scanning QR code...');
 
       const html5QrCode = new Html5Qrcode("qr-reader");
       const decodedText = await html5QrCode.scanFile(file, true);
 
       validateTicket(decodedText);
 
+      // Reset input so same file can be selected again
+      event.target.value = '';
+
     } catch (err) {
       console.error('File scan error', err);
       toast.error('Could not find QR Code in image', {
-        description: 'Try a clearer image or use the camera.'
+        description: 'Make sure the QR code is clearly visible and try again.'
       });
-      // Cleanup if needed, though scanFile is usually stateless regarding the DOM element if used carefully, 
-      // but Html5Qrcode constructor requires an element ID.
-      // If "qr-reader" is used, it cleans up after itself for scanFile? 
-      // Actually scanFile doesn't attach video, so it's safer.
+      event.target.value = '';
     }
   };
 
@@ -371,7 +371,7 @@ const Scan = () => {
                   </p>
                   {isIOS && !cameraError && (
                     <p className="text-xs text-yellow-500 text-center max-w-xs">
-                      💡 Tip: On iPhone, "Upload QR Image" below works better than camera
+                      💡 Tip: Use the blue button below - camera opens instantly!
                     </p>
                   )}
                 </div>
@@ -419,12 +419,13 @@ const Scan = () => {
                 onClick={() => document.getElementById('qr-file-input')?.click()}
               >
                 <Upload className="w-5 h-5 mr-2" />
-                {isIOS ? "📸 Upload QR Image (Recommended)" : "Upload QR Image"}
+                {isIOS ? "📸 Scan QR Code (Instant)" : "Upload QR Image"}
               </Button>
               <Input
                 id="qr-file-input"
                 type="file"
                 accept="image/*"
+                capture="environment"
                 className="hidden"
                 onChange={handleFileUpload}
               />
