@@ -6,8 +6,8 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('event-videos', 'event-videos', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- RLS is already enabled on storage.objects by Supabase
+-- No need to ALTER TABLE (requires superuser)
 
 -- Policy: Anyone can view videos (public bucket)
 DROP POLICY IF EXISTS "Anyone can view event videos" ON storage.objects;

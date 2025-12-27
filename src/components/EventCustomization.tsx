@@ -50,6 +50,7 @@ interface EventCustomizationProps {
     upiId?: string;
     paymentQrImageUrl?: string;
     discountPercent?: number;
+    event_date?: string; // Added for date editing
   };
 }
 
@@ -64,6 +65,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
   const [upiId, setUpiId] = useState(initialData?.upiId || '');
   const [paymentQrImageUrl, setPaymentQrImageUrl] = useState(initialData?.paymentQrImageUrl || '');
   const [discountPercent, setDiscountPercent] = useState(initialData?.discountPercent || 0); // Global event discount
+  const [eventDate, setEventDate] = useState(initialData?.event_date || ''); // Event date editing
   const [uploading, setUploading] = useState(false);
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -380,7 +382,8 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
           sponsors: sponsors.filter(s => s.name && s.logoUrl) as any,
           upi_id: upiId || null,
           qr_code_url: paymentQrImageUrl || null,
-          discount_percent: discountPercent
+          discount_percent: discountPercent,
+          event_date: eventDate || null // Save event date
         })
         .eq('id', eventId);
 
@@ -400,6 +403,34 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
     <div className="space-y-6">
       {/* Ticket Tiers */}
       <TicketTiersManager eventId={eventId} isFreeEvent={isFreeEvent} />
+
+      {/* Event Date & Time Editor */}
+      <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            📅 Event Date & Time
+          </CardTitle>
+          <CardDescription>
+            Change your event date and time here
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="eventDate">Event Date & Time</Label>
+            <Input
+              id="eventDate"
+              type="datetime-local"
+              value={eventDate ? new Date(eventDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="max-w-md"
+            />
+            <p className="text-xs text-muted-foreground">
+              💡 This will update the event date shown to customers
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {!isFreeEvent && (
         <Card className="border-2 border-primary/20">

@@ -88,7 +88,8 @@ const EventCustomizationPage = () => {
             sponsors: event.sponsors || [],
             upiId: event.upi_id || '',
             paymentQrImageUrl: event.payment_qr_image_url || '',
-            discountPercent: event.discount_percent || 0
+            discountPercent: event.discount_percent || 0,
+            event_date: event.event_date // Pass event date for editing
           }}
         />
       </div>
