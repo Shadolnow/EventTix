@@ -110,7 +110,7 @@ const App = () => (
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <TooltipProvider>
           <Toaster />
-          <Sonner />
+          <Sonner position="top-center" richColors closeButton />
           <CookieConsent />
           <BrowserRouter>
             <TicketNotificationListener />
