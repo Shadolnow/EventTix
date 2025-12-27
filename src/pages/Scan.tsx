@@ -267,17 +267,8 @@ const Scan = () => {
       await scanner.start(
         { facingMode: 'environment' },
         {
-          fps: 15,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            return {
-              width: Math.floor(minEdge * 0.7),
-              height: Math.floor(minEdge * 0.7),
-            };
-          },
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          }
+          fps: 10,
+          qrbox: 250,
         },
         (decodedText) => {
           validateTicket(decodedText);
@@ -360,7 +351,7 @@ const Scan = () => {
               <div
                 id="qr-reader"
                 className={`w-full rounded-lg overflow-hidden ${isScanning ? 'block' : 'hidden'}`}
-                style={{ minHeight: '300px' }}
+                style={{ minHeight: '400px', height: '400px', maxWidth: '100%' }}
               />
 
               {!isScanning && (
