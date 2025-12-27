@@ -275,15 +275,23 @@ const Scan = () => {
       await scanner.start(
         cameraConfig,
         {
-          fps: 10,
-          qrbox: 250,
-          aspectRatio: 1.0,
+          fps: 20, // Faster scanning - 20 frames per second
+          qrbox: { width: 300, height: 300 }, // Larger scan area
+          aspectRatio: 1.777778, // 16:9 for better camera view
+          disableFlip: false, // Allow horizontal flip
+          videoConstraints: {
+            advanced: [{ focusMode: "continuous" }] // Continuous autofocus
+          }
         },
         (decodedText) => {
+          console.log("✅ QR Code scanned:", decodedText);
           validateTicket(decodedText);
         },
         (errorMessage) => {
-          // Ignore scanning errors (happens when no QR code is in view)
+          // Only log significant errors, not normal "no QR code found"
+          if (!errorMessage.includes("NotFoundException")) {
+            console.debug("Scanner:", errorMessage);
+          }
         }
       );
 
