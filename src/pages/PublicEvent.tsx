@@ -88,7 +88,10 @@ const PublicEvent = () => {
       console.log('Fetching event with ID:', eventId);
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (email)
+        `)
         .eq('id', eventId)
         .maybeSingle();
 
@@ -380,6 +383,36 @@ const PublicEvent = () => {
       } catch (emailErr) {
         console.error("Failed to send email:", emailErr);
         // Don't block success flow for email failure
+      }
+
+      // Send admin notification
+      try {
+        const organizerEmail = event.profiles?.email;
+        if (organizerEmail) {
+          const notifyResponse = await fetch(`${window.location.origin}/api/notify-admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              adminEmail: organizerEmail,
+              customerName: formData.name,
+              customerEmail: formData.email,
+              eventTitle: event.title,
+              ticketType: selectedTier?.name || 'General Admission',
+              quantity: 1,
+              totalAmount: selectedTier?.price || 0,
+              paymentMethod: paymentType
+            })
+          });
+
+          if (notifyResponse.ok) {
+            console.log('✅ Admin notification sent');
+          } else {
+            console.error('Admin notification failed:', await notifyResponse.text());
+          }
+        }
+      } catch (notifyErr) {
+        console.error("Failed to notify admin:", notifyErr);
+        // Don't block success flow
       }
 
       // Set the claimed ticket to show success UI
