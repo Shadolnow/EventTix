@@ -604,10 +604,41 @@ const Scan = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="container mx-auto max-w-4xl">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {/* Live Entry Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="border-border/50 bg-background/50">
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Total Sold</p>
+              <p className="text-2xl font-black text-primary">{ticketCache.size}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-background/50">
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Entered</p>
+              <p className="text-2xl font-black text-green-500">
+                {Array.from(ticketCache.values()).filter(t => t.is_validated).length}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-background/50">
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Remaining</p>
+              <p className="text-2xl font-black text-amber-500">
+                {ticketCache.size - Array.from(ticketCache.values()).filter(t => t.is_validated).length}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-background/50">
+            <CardContent className="p-4 flex flex-col items-center justify-center">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Progress</p>
+              <p className="text-2xl font-black text-blue-500">
+                {ticketCache.size > 0
+                  ? Math.round((Array.from(ticketCache.values()).filter(t => t.is_validated).length / ticketCache.size) * 100)
+                  : 0}%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="border-2 border-primary/20 shadow-neon-cyan mb-6">
           <CardHeader>

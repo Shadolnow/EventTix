@@ -22,26 +22,39 @@ export const TicketCard = ({ ticket, compact = false, showActions = true }: Tick
     if (!ticketRef.current) return;
 
     try {
-      // Add a solid background color to the element before capturing
+      toast.info("Generating high-quality ticket...");
+
       const originalBg = ticketRef.current.style.background;
-      ticketRef.current.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      ticketRef.current.style.background = 'linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #db2777 100%)';
 
       const canvas = await html2canvas(ticketRef.current, {
         scale: 3,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#667eea',
+        backgroundColor: '#1e3a8a',
+        scrollX: 0,
+        scrollY: -window.scrollY, // Fix for scrolled pages
       });
 
-      // Restore original background
       ticketRef.current.style.background = originalBg;
 
-      const link = document.createElement("a");
-      link.download = `Ticket-${ticket.ticket_code}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0);
-      link.click();
-      toast.success("Ticket downloaded!");
+      canvas.toBlob((blob) => {
+        if (!blob) throw new Error("Blob conversion failed");
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `Ticket-${ticket.ticket_code}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Cleanup
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success("Ticket downloaded!");
+      }, "image/png", 1.0);
+
     } catch (error) {
       toast.error("Failed to download ticket");
       console.error(error);
@@ -52,14 +65,18 @@ export const TicketCard = ({ ticket, compact = false, showActions = true }: Tick
     if (!ticketRef.current) return;
 
     try {
+      toast.info("Preparing ticket for sharing...");
+
       const originalBg = ticketRef.current.style.background;
-      ticketRef.current.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      ticketRef.current.style.background = 'linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #db2777 100%)';
 
       const canvas = await html2canvas(ticketRef.current, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#667eea',
+        backgroundColor: '#1e3a8a',
+        scrollX: 0,
+        scrollY: -window.scrollY,
       });
 
       ticketRef.current.style.background = originalBg;
@@ -67,11 +84,19 @@ export const TicketCard = ({ ticket, compact = false, showActions = true }: Tick
       canvas.toBlob(async (blob) => {
         if (blob && navigator.share) {
           const file = new File([blob], `Ticket-${ticket.ticket_code}.png`, { type: "image/png" });
-          await navigator.share({
-            title: `${ticket.events.title} Ticket`,
-            text: `Ticket Code: ${ticket.ticket_code}`,
-            files: [file],
-          });
+          try {
+            await navigator.share({
+              title: `${ticket.events.title} Ticket`,
+              text: `Here is your ticket for ${ticket.events.title}. Keep it safe!`,
+              files: [file],
+            });
+            toast.success("Shared successfully!");
+          } catch (err) {
+            if (err instanceof Error && err.name !== 'AbortError') {
+              console.error('Share failed', err);
+              toast.error("Sharing failed. Try downloading instead.");
+            }
+          }
         } else {
           await navigator.clipboard.writeText(`Ticket for ${ticket.events.title}\nCode: ${ticket.ticket_code}`);
           toast.info("Ticket info copied to clipboard!");
