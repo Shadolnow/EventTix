@@ -253,6 +253,12 @@ export const TicketCard = ({ ticket, compact = false, showActions = true }: Tick
             <h1 className="text-3xl font-black mb-1 leading-tight drop-shadow-2xl bg-gradient-to-br from-white via-cyan-100 to-white bg-clip-text text-transparent">
               {ticket.events.title}
             </h1>
+            <div className="my-3 inline-block">
+              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 rounded-lg border-2 border-white/50 shadow-2xl">
+                <p className="text-xs font-bold text-black/70 uppercase tracking-wide">Ticket Type</p>
+                <p className="text-xl font-black text-black uppercase tracking-wider">{tierName}</p>
+              </div>
+            </div>
             <p className="text-sm opacity-90 flex items-center gap-1.5 font-medium">
               <Calendar className="w-4 h-4 drop-shadow-md" />
               {format(new Date(ticket.events.event_date), 'PPP • p')}
