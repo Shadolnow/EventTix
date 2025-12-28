@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { IndianRupee, Users, Check, Info } from 'lucide-react';
+import { IndianRupee, Users, Check, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/safeClient';
 
 interface TicketTier {
   id: string;
@@ -14,7 +15,7 @@ interface TicketTier {
 }
 
 interface TierSelectorProps {
-  tiers: TicketTier[];
+  eventId: string;
   selectedTierId: string | null;
   onSelect: (tier: TicketTier | null) => void;
   isFreeEvent?: boolean;
@@ -22,16 +23,76 @@ interface TierSelectorProps {
 }
 
 export const TierSelector = ({
-  tiers,
+  eventId,
   selectedTierId,
   onSelect,
   isFreeEvent = false,
   discountPercent = 0,
 }: TierSelectorProps) => {
+  const [tiers, setTiers] = useState<TicketTier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTiers = async () => {
+      if (!eventId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('ticket_tiers')
+          .select('id, name, description, price, capacity, tickets_sold')
+          .eq('event_id', eventId)
+          .eq('is_active', true)
+          .order('price', { ascending: true });
+
+        if (fetchError) {
+          console.error('Error fetching tiers:', fetchError);
+          setError('Failed to load ticket tiers');
+        } else {
+          setTiers(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching tiers:', err);
+        setError('Failed to load ticket tiers');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTiers();
+  }, [eventId]);
+
   const isAvailable = (tier: TicketTier) => {
     if (!tier.capacity) return true;
     return tier.tickets_sold < tier.capacity;
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading ticket options...</span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+
+  // Show empty state if no tiers
+  if (tiers.length === 0) {
+    return null; // No tiers available, hide the component
+  }
 
   return (
     <div className="space-y-4">

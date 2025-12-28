@@ -131,8 +131,7 @@ const PublicEvent = () => {
       const { count } = await supabase
         .from('tickets')
         .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId)
-        .neq('status', 'cancelled');
+        .eq('event_id', eventId);
 
       setTicketsSold(count || 0);
     };
