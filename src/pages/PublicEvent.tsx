@@ -725,23 +725,13 @@ const PublicEvent = () => {
                       <CardContent>
                         <form onSubmit={handleClaim} className="space-y-4">
                           {hasTiers && (
-                            <>
-                              <TierSelector
-                                eventId={eventId!}
-                                isFreeEvent={event.is_free}
-                                selectedTierId={selectedTier?.id || null}
-                                onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
-                                discountPercent={event.discount_percent || 0}
-                              />
-                              {!selectedTier && (
-                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
-                                  <Info className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                                    Please select a ticket type above to continue
-                                  </p>
-                                </div>
-                              )}
-                            </>
+                            <TierSelector
+                              eventId={eventId!}
+                              isFreeEvent={event.is_free}
+                              selectedTierId={selectedTier?.id || null}
+                              onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
+                              discountPercent={event.discount_percent || 0}
+                            />
                           )}
 
                           {!event.is_free && !hasTiers && (
