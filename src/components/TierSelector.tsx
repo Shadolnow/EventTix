@@ -1,155 +1,148 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/safeClient';
-import { IndianRupee, Check, Users } from 'lucide-react';
+import { IndianRupee, Users, Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TicketTier {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
   price: number;
-  currency: string;
-  capacity: number | null;
+  capacity?: number;
   tickets_sold: number;
-  is_active: boolean;
 }
 
 interface TierSelectorProps {
-  eventId: string;
-  isFreeEvent: boolean;
+  tiers: TicketTier[];
   selectedTierId: string | null;
   onSelect: (tier: TicketTier | null) => void;
-  discountPercent?: number; // Global event discount
+  isFreeEvent?: boolean;
+  discountPercent?: number;
 }
 
-export const TierSelector = ({ eventId, isFreeEvent, selectedTierId, onSelect, discountPercent = 0 }: TierSelectorProps) => {
-  const [tiers, setTiers] = useState<TicketTier[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTiers();
-  }, [eventId]);
-
-  const fetchTiers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ticket_tiers')
-        .select('*')
-        .eq('event_id', eventId)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-
-      if (error) throw error;
-      setTiers(data || []);
-
-      // Auto-select first tier if only one available
-      if (data && data.length === 1) {
-        onSelect(data[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching tiers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export const TierSelector = ({
+  tiers,
+  selectedTierId,
+  onSelect,
+  isFreeEvent = false,
+  discountPercent = 0,
+}: TierSelectorProps) => {
   const isAvailable = (tier: TicketTier) => {
     if (!tier.capacity) return true;
     return tier.tickets_sold < tier.capacity;
   };
 
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-2">
-        <div className="h-20 bg-muted rounded-lg"></div>
-        <div className="h-20 bg-muted rounded-lg"></div>
-      </div>
-    );
-  }
-
-  if (tiers.length === 0) {
-    return null;
-  }
-
   return (
-    <div className="space-y-3">
-      <label className="text-sm font-medium">Select Ticket Type</label>
-      <div className="grid gap-3">
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-foreground">Select Ticket Type</h3>
+
+      <div className="space-y-3">
         {tiers.map((tier) => {
           const available = isAvailable(tier);
           const isSelected = selectedTierId === tier.id;
+          const finalPrice = discountPercent > 0
+            ? Math.round(tier.price * (1 - discountPercent / 100))
+            : tier.price;
 
           return (
             <Card
               key={tier.id}
               className={cn(
-                'cursor-pointer transition-all border-2',
-                isSelected && 'border-primary bg-primary/5',
+                'cursor-pointer transition-all duration-200',
+                'hover:shadow-lg',
+                isSelected && 'ring-2 ring-primary shadow-lg shadow-primary/20',
                 !available && 'opacity-50 cursor-not-allowed',
                 available && !isSelected && 'hover:border-primary/50'
               )}
               onClick={() => available && onSelect(isSelected ? null : tier)}
             >
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
+                {/* Header: Name + Price */}
+                <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold break-words">{tier.name}</h4>
-                      {!available && (
-                        <Badge variant="destructive" className="shrink-0">Sold Out</Badge>
-                      )}
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-base leading-tight">
+                        {tier.name}
+                      </h4>
                       {isSelected && available && (
                         <div className="shrink-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-primary-foreground" />
                         </div>
                       )}
                     </div>
-                    {tier.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {tier.description}
-                      </p>
-                    )}
-                    {tier.capacity && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
-                        <Users className="w-3 h-3" />
-                        <span>{tier.capacity - tier.tickets_sold} remaining</span>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Price Section - Clean & Clear */}
                   <div className="text-right shrink-0">
                     {isFreeEvent || tier.price === 0 ? (
-                      <span className="text-lg font-bold text-primary">Free</span>
+                      <div className="text-xl font-bold text-green-500">FREE</div>
                     ) : (
-                      <div>
+                      <div className="space-y-1">
                         {discountPercent > 0 && (
-                          <div className="flex items-center text-xs text-muted-foreground line-through mb-1">
+                          <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground line-through">
                             <IndianRupee className="w-3 h-3" />
-                            {tier.price.toLocaleString()}
+                            <span>{tier.price.toLocaleString('en-IN')}</span>
                           </div>
                         )}
-                        <div className="flex items-center text-lg font-bold">
+                        <div className="flex items-center justify-end gap-1 text-xl font-bold text-foreground">
                           <IndianRupee className="w-4 h-4" />
-                          {discountPercent > 0
-                            ? Math.round(tier.price * (1 - discountPercent / 100)).toLocaleString()
-                            : tier.price.toLocaleString()
-                          }
+                          <span>{finalPrice.toLocaleString('en-IN')}</span>
                         </div>
-                        {discountPercent > 0 && (
-                          <Badge className="bg-green-500/20 text-green-600 border-green-500/50 text-xs mt-1">
-                            {discountPercent}% OFF
-                          </Badge>
-                        )}
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Description */}
+                {tier.description && (
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                    {tier.description}
+                  </p>
+                )}
+
+                {/* Footer: Status Badges */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Availability */}
+                  {tier.capacity && (
+                    <div className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted">
+                      <Users className="w-3 h-3" />
+                      <span className="font-medium">
+                        {available
+                          ? `${tier.capacity - tier.tickets_sold} left`
+                          : 'Sold Out'
+                        }
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Discount Badge */}
+                  {discountPercent > 0 && (
+                    <Badge className="bg-green-500/20 text-green-600 border-green-500/50 text-xs">
+                      {discountPercent}% OFF
+                    </Badge>
+                  )}
+
+                  {/* Sold Out Badge */}
+                  {!available && (
+                    <Badge variant="destructive" className="text-xs">
+                      Sold Out
+                    </Badge>
+                  )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Help Text */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+        <Info className="w-4 h-4 shrink-0" />
+        <span>Tap a ticket type to select. You can change it before payment.</span>
+      </div>
     </div>
   );
 };
+
+export default TierSelector;
