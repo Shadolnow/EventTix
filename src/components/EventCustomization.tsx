@@ -52,6 +52,7 @@ interface EventCustomizationProps {
     discountPercent?: number;
     event_date?: string; // Added for date editing
     coverImageUrl?: string; // Main event cover image
+    venue?: string; // Venue/location
   };
 }
 
@@ -97,6 +98,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
   const [discountPercent, setDiscountPercent] = useState(initialData?.discountPercent || 0); // Global event discount
   const [eventDate, setEventDate] = useState(formatDateForInput(initialData?.event_date)); // Event date in local format
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || ''); // Main event cover image
+  const [venue, setVenue] = useState(initialData?.venue || ''); // Venue/location
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [newVideoUrl, setNewVideoUrl] = useState('');
@@ -463,7 +465,8 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
           upi_id: upiId || null,
           qr_code_url: paymentQrImageUrl || null,
           discount_percent: discountPercent,
-          event_date: eventDate ? formatDateForDb(eventDate) : null // Convert local time to UTC
+          event_date: eventDate ? formatDateForDb(eventDate) : null, // Convert local time to UTC
+          venue: venue || null // Update venue
         })
         .eq('id', eventId);
 
@@ -507,6 +510,34 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
             />
             <p className="text-xs text-muted-foreground">
               💡 Set in your local timezone - will be converted automatically
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Venue/Location Editor */}
+      <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" />
+            📍 Event Venue / Location
+          </CardTitle>
+          <CardDescription>
+            Change your event location or venue address
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="venue">Venue / Location</Label>
+            <Input
+              id="venue"
+              placeholder="e.g., Wakad Digital Lounge, Pune or Google Maps link"
+              value={venue}
+              onChange={(e) => setVenue(e.target.value)}
+              className="max-w-2xl"
+            />
+            <p className="text-xs text-muted-foreground">
+              💡 Enter venue name/address or paste a Google Maps link
             </p>
           </div>
         </CardContent>
