@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Camera, CheckCircle2, XCircle, BarChart3, AlertCircle, Upload } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, XCircle, BarChart3, AlertCircle, Upload, SwitchCamera } from 'lucide-react';
 import { toast } from 'sonner';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '@/components/AuthProvider';
@@ -17,6 +17,8 @@ const Scan = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraError, setCameraError] = useState('');
   const { user } = useAuth();
+  const [availableCameras, setAvailableCameras] = useState<any[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
 
   // Detect iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -290,10 +292,37 @@ const Scan = () => {
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
 
-      // iOS-specific constraints
-      const cameraConfig = isIOS
-        ? { facingMode: { exact: 'environment' } }
-        : { facingMode: 'environment' };
+      // Get available cameras and prefer back camera
+      const cameras = await Html5Qrcode.getCameras();
+      setAvailableCameras(cameras);
+
+      let cameraConfig: any;
+
+      if (selectedCameraId) {
+        // Use user-selected camera
+        cameraConfig = selectedCameraId;
+      } else if (cameras && cameras.length > 0) {
+        // Auto-select back camera
+        const backCamera = cameras.find(cam =>
+          cam.label.toLowerCase().includes('back') ||
+          cam.label.toLowerCase().includes('rear') ||
+          cam.label.toLowerCase().includes('environment')
+        );
+
+        if (backCamera) {
+          cameraConfig = backCamera.id;
+          setSelectedCameraId(backCamera.id);
+          console.log('✅ Using back camera:', backCamera.label);
+        } else {
+          // Fallback to last camera (usually back on mobile)
+          cameraConfig = cameras[cameras.length - 1].id;
+          setSelectedCameraId(cameras[cameras.length - 1].id);
+          console.log('Using camera:', cameras[cameras.length - 1].label);
+        }
+      } else {
+        // Fallback to facingMode if no cameras enumerated
+        cameraConfig = { facingMode: 'environment' };
+      }
 
       await scanner.start(
         cameraConfig,
@@ -353,6 +382,36 @@ const Scan = () => {
       setIsScanning(false);
     }
   };
+
+  const switchCamera = async () => {
+    if (availableCameras.length <= 1) {
+      toast.info('Only one camera available');
+      return;
+    }
+
+    try {
+      // Stop current scanner
+      await stopScanning();
+
+      // Find next camera
+      const currentIndex = availableCameras.findIndex(cam => cam.id === selectedCameraId);
+      const nextIndex = (currentIndex + 1) % availableCameras.length;
+      const nextCamera = availableCameras[nextIndex];
+
+      setSelectedCameraId(nextCamera.id);
+      toast.success(`Switched to: ${nextCamera.label}`);
+
+      // Small delay before restarting
+      setTimeout(() => {
+        startScanning();
+      }, 500);
+
+    } catch (err) {
+      console.error('Camera switch error:', err);
+      toast.error('Failed to switch camera');
+    }
+  };
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -440,6 +499,17 @@ const Scan = () => {
                 >
                   Stop Camera
                 </Button>
+                {availableCameras.length > 1 && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={switchCamera}
+                  className="flex-shrink-0"
+                  title="Switch Camera"
+                >
+                  <SwitchCamera className="w-5 h-5" />
+                </Button>
+              )}
               )}
             </div>
 
