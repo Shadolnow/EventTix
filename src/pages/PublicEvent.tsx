@@ -725,13 +725,23 @@ const PublicEvent = () => {
                       <CardContent>
                         <form onSubmit={handleClaim} className="space-y-4">
                           {hasTiers && (
-                            <TierSelector
-                              eventId={eventId!}
-                              isFreeEvent={event.is_free}
-                              selectedTierId={selectedTier?.id || null}
-                              onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
-                              discountPercent={event.discount_percent || 0}
-                            />
+                            <>
+                              <TierSelector
+                                eventId={eventId!}
+                                isFreeEvent={event.is_free}
+                                selectedTierId={selectedTier?.id || null}
+                                onSelect={(tier) => setSelectedTier(tier ? { id: tier.id, name: tier.name, price: tier.price } : null)}
+                                discountPercent={event.discount_percent || 0}
+                              />
+                              {!selectedTier && (
+                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
+                                  <Info className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                                    Please select a ticket type above to continue
+                                  </p>
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {!event.is_free && !hasTiers && (
@@ -1424,7 +1434,7 @@ const PublicEvent = () => {
 
                   <Button
                     onClick={() => createTicket('upi')}
-                    disabled={loading}
+                    disabled={loading || (hasTiers && !selectedTier)}
                     className="w-full mt-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 min-h-[48px]"
                   >
                     {loading ? 'Processing...' : '✅ I have made UPI Payment'}
@@ -1441,7 +1451,7 @@ const PublicEvent = () => {
                 {/* Cash at Venue Option */}
                 <button
                   onClick={() => createTicket('cash')}
-                  disabled={loading}
+                  disabled={loading || (hasTiers && !selectedTier)}
                   className="w-full p-4 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-muted/50 transition-all flex items-center gap-3 group"
                 >
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
