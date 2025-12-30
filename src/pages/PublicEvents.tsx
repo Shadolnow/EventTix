@@ -61,27 +61,43 @@ const PublicEvents = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const oneWeekAgo = subDays(new Date(), 7);
       const today = new Date();
+      const oneWeekAgo = subDays(today, 7);
 
-      // Optimized query: only fetch essential fields and limit initial results
-      const { data, error } = await supabase
+      setLoading(true);
+
+      // 1. Fetch Upcoming Events (Future)
+      const { data: upcoming, error: upcomingError } = await supabase
         .from('events')
-        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, cover_image')
-        .gte('event_date', oneWeekAgo.toISOString())
-        .order('event_date', { ascending: true })
-        .limit(ITEMS_PER_PAGE * 2); // Load initial batch
+        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, created_by')
+        .gte('event_date', today.toISOString())
+        .order('event_date', { ascending: true });
 
-      if (data) {
-        const upcoming = data.filter(event => isAfter(new Date(event.event_date), today));
-        const past = data.filter(event => isPast(new Date(event.event_date)) && isAfter(new Date(event.event_date), oneWeekAgo));
-
-        setUpcomingEvents(upcoming);
-        setPastEvents(past);
-        setFilteredUpcoming(upcoming);
-        setFilteredPast(past);
-        setHasMore(data.length === ITEMS_PER_PAGE * 2);
+      if (upcomingError) {
+        console.error('Error fetching upcoming events:', upcomingError);
+        toast.error('Failed to load events');
       }
+
+      // 2. Fetch Recent Past Events (Last 7 days)
+      const { data: past, error: pastError } = await supabase
+        .from('events')
+        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, created_by')
+        .lt('event_date', today.toISOString())
+        .gte('event_date', oneWeekAgo.toISOString())
+        .order('event_date', { ascending: false }); // Most recent past first
+
+      if (pastError) console.error('Error fetching past events:', pastError);
+
+      if (upcoming) {
+        setUpcomingEvents(upcoming);
+        setFilteredUpcoming(upcoming);
+      }
+
+      if (past) {
+        setPastEvents(past);
+        setFilteredPast(past);
+      }
+
       setLoading(false);
     };
 
