@@ -47,6 +47,7 @@ const ScannerTest = lazy(() => import("./pages/ScannerTest"));
 const CameraDebug = lazy(() => import("./pages/CameraDebug"));
 const GateScanner = lazy(() => import("./pages/GateScanner"));
 const StaffLogin = lazy(() => import("./pages/StaffLogin"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ const AnimatedRoutes = () => {
           <Route path="/scanner-test" element={<PageTransition><ScannerTest /></PageTransition>} />
           <Route path="/camera-debug" element={<PageTransition><CameraDebug /></PageTransition>} />
           <Route path="/staff-login" element={<PageTransition><StaffLogin /></PageTransition>} />
+          <Route path="/profile" element={<AuthRoute><PageTransition><UserProfile /></PageTransition></AuthRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

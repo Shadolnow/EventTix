@@ -24,7 +24,7 @@ export const MobileNavigation = () => {
 
   const getPath = (item: any) => {
     if (item.label === 'Profile') {
-      return isAdmin ? '/dashboard' : '/mobile-settings';
+      return isAdmin ? '/dashboard' : '/profile';
     }
     return item.path;
   };

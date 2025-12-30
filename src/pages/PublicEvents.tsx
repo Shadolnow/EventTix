@@ -7,37 +7,34 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Ticket, IndianRupee, Search, Filter, Users, Archive, Sparkles } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { format, subDays, isPast, isAfter } from 'date-fns';
+import { Calendar, MapPin, Ticket, IndianRupee, Search, Filter, Users, Archive, Sparkles, Heart } from 'lucide-react';
+import { toast } from 'sonner';
 
-const CATEGORIES = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'concert', label: '🎵 Concert' },
-  { value: 'conference', label: '💼 Conference' },
-  { value: 'workshop', label: '🎓 Workshop' },
-  { value: 'meetup', label: '🤝 Meetup' },
-  { value: 'party', label: '🎉 Party' },
-  { value: 'music', label: '🎵 Music' },
-  { value: 'sports', label: '⚽ Sports' },
-  { value: 'festival', label: '🎪 Festival' },
-  { value: 'networking', label: '🤝 Networking' },
-  { value: 'other', label: '📅 Other' },
-  { value: 'general', label: '📅 General' },
-];
+// ... (existing constants)
 
 const PublicEvents = () => {
   const navigate = useNavigate();
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  const [pastEvents, setPastEvents] = useState<any[]>([]);
-  const [filteredUpcoming, setFilteredUpcoming] = useState<any[]>([]);
-  const [filteredPast, setFilteredPast] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  // ... (existing state)
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('saved_event_ids') || '[]');
+    setSavedIds(saved);
+  }, []);
+
+  const toggleSave = (e: React.MouseEvent, eventId: string) => {
+    e.stopPropagation();
+    const newSaved = savedIds.includes(eventId)
+      ? savedIds.filter(id => id !== eventId)
+      : [...savedIds, eventId];
+
+    setSavedIds(newSaved);
+    localStorage.setItem('saved_event_ids', JSON.stringify(newSaved));
+    toast(savedIds.includes(eventId) ? 'Removed from favorites' : 'Added to favorites', {
+      icon: savedIds.includes(eventId) ? '💔' : '❤️'
+    });
+  };
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -136,115 +133,127 @@ const PublicEvents = () => {
     setFilteredPast(applyFilters(pastEvents));
   }, [upcomingEvents, pastEvents, searchQuery, selectedCategory, priceFilter, dateFilter, activeTab]);
 
-  const EventCard = ({ event, isPastEvent = false }: { event: any; isPastEvent?: boolean }) => (
-    <Card
-      className={`
-        group border-2 transition-all duration-300 cursor-pointer
+  const EventCard = ({ event, isPastEvent = false }: { event: any; isPastEvent?: boolean }) => {
+    const isSaved = savedIds.includes(event.id);
+    return (
+      <Card
+        className={`
+        group border-2 transition-all duration-300 cursor-pointer relative
         ${isPastEvent
-          ? 'border-muted/50 hover:border-muted opacity-60 hover:opacity-80'
-          : 'border-primary/20 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]'
-        }
+            ? 'border-muted/50 hover:border-muted opacity-60 hover:opacity-80'
+            : 'border-primary/20 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]'
+          }
         hover:-translate-y-1 hover:scale-[1.02]
         backdrop-blur-sm bg-card/50
       `}
-      onClick={() => navigate(`/e/${event.id}`)}
-    >
-      {event.image_url && (
-        <div className="relative h-48 overflow-hidden rounded-t-lg">
-          <img
-            src={event.image_url}
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-          {isPastEvent && (
-            <div className="absolute top-2 right-2">
-              <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
-                <Archive className="w-3 h-3 mr-1" />
-                Past Event
-              </Badge>
+        onClick={() => navigate(`/e/${event.id}`)}
+      >
+        {/* Save Button */}
+        <button
+          onClick={(e) => toggleSave(e, event.id)}
+          className="absolute top-3 left-3 z-20 p-2 rounded-full bg-background/50 backdrop-blur-md hover:bg-background/80 transition-all active:scale-95"
+        >
+          <Heart className={`w-5 h-5 transition-colors ${isSaved ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
+        </button>
+
+        {/* Rest of Card */}
+        {event.image_url && (
+          <div className="relative h-48 overflow-hidden rounded-t-lg">
+            <img
+              src={event.image_url}
+              alt={event.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            {isPastEvent && (
+              <div className="absolute top-2 right-2">
+                <Badge variant="secondary" className="backdrop-blur-md bg-background/80">
+                  <Archive className="w-3 h-3 mr-1" />
+                  Past Event
+                </Badge>
+              </div>
+            )}
+          </div>
+        )}
+        <CardHeader>
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors pr-2">{event.title}</CardTitle>
+              {event.category && event.category !== 'general' && (
+                <Badge variant="outline" className="text-xs animate-in fade-in-50">
+                  {CATEGORIES.find(c => c.value === event.category)?.label || event.category}
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
-      )}
-      <CardHeader>
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">{event.title}</CardTitle>
-            {event.category && event.category !== 'general' && (
-              <Badge variant="outline" className="text-xs animate-in fade-in-50">
-                {CATEGORIES.find(c => c.value === event.category)?.label || event.category}
+            {event.is_free ? (
+              <Badge variant="default" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
+                FREE
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-300 hover:scale-110">
+                <IndianRupee className="w-3 h-3" />
+                {event.ticket_price}
               </Badge>
             )}
           </div>
-          {event.is_free ? (
-            <Badge variant="default" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-              FREE
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-300 hover:scale-110">
-              <IndianRupee className="w-3 h-3" />
-              {event.ticket_price}
-            </Badge>
-          )}
-        </div>
-        <CardDescription className="flex items-center gap-2 animate-in slide-in-from-left-5 duration-300">
-          <Calendar className="w-4 h-4" />
-          {format(new Date(event.event_date), 'PPP')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="flex items-center gap-2 text-sm animate-in slide-in-from-left-5 duration-300 delay-75">
-          <MapPin className="w-4 h-4 flex-shrink-0 text-primary" />
-          <span className="line-clamp-1">{event.venue}</span>
-        </p>
-        {event.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 animate-in fade-in-50 duration-300 delay-150">
-            {event.description}
+          <CardDescription className="flex items-center gap-2 animate-in slide-in-from-left-5 duration-300">
+            <Calendar className="w-4 h-4" />
+            {format(new Date(event.event_date), 'PPP')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="flex items-center gap-2 text-sm animate-in slide-in-from-left-5 duration-300 delay-75">
+            <MapPin className="w-4 h-4 flex-shrink-0 text-primary" />
+            <span className="line-clamp-1">{event.venue}</span>
           </p>
-        )}
-        {event.capacity && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground animate-in fade-in-50 duration-300 delay-200">
-            <Users className="w-3 h-3" />
-            <span>{event.tickets_issued} / {event.capacity} tickets claimed</span>
-            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-primary/50 transition-all duration-500"
-                style={{ width: `${(event.tickets_issued / event.capacity) * 100}%` }}
-              />
-            </div>
-          </div>
-        )}
-        {event.promotion_text && (
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded p-2 animate-pulse-slow">
-            <p className="text-xs text-primary font-semibold flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              {event.promotion_text}
+          {event.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 animate-in fade-in-50 duration-300 delay-150">
+              {event.description}
             </p>
-          </div>
-        )}
-        <Button
-          variant={event.is_free ? "default" : "outline"}
-          className={`
+          )}
+          {event.capacity && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground animate-in fade-in-50 duration-300 delay-200">
+              <Users className="w-3 h-3" />
+              <span>{event.tickets_issued} / {event.capacity} tickets claimed</span>
+              <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-primary/50 transition-all duration-500"
+                  style={{ width: `${(event.tickets_issued / event.capacity) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {event.promotion_text && (
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded p-2 animate-pulse-slow">
+              <p className="text-xs text-primary font-semibold flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                {event.promotion_text}
+              </p>
+            </div>
+          )}
+          <Button
+            variant={event.is_free ? "default" : "outline"}
+            className={`
             w-full mt-2 transition-all duration-300
             ${event.is_free
-              ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70'
-              : 'hover:bg-primary/10'
-            }
+                ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70'
+                : 'hover:bg-primary/10'
+              }
             group-hover:scale-105
           `}
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/e/${event.id}`);
-          }}
-          disabled={isPastEvent}
-        >
-          <Ticket className="w-4 h-4 mr-2 transition-transform group-hover:rotate-12" />
-          {isPastEvent ? 'Event Ended' : event.is_free ? 'Get Free Ticket' : 'Buy Tickets'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/e/${event.id}`);
+            }}
+            disabled={isPastEvent}
+          >
+            <Ticket className="w-4 h-4 mr-2 transition-transform group-hover:rotate-12" />
+            {isPastEvent ? 'Event Ended' : event.is_free ? 'Get Free Ticket' : 'Buy Tickets'}
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  };
 
   if (loading) {
     return (
