@@ -9,14 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, Ticket, IndianRupee, Search, Filter, Users, Archive, Sparkles, Heart } from 'lucide-react';
 import { toast } from 'sonner';
-
-// ... (existing constants)
+import { EventGridSkeleton } from '@/components/skeletons/EventCardSkeleton';
+import { format, isAfter, isPast, subDays } from 'date-fns';
 
 const PublicEvents = () => {
   const navigate = useNavigate();
-  // ... (existing state)
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [filteredUpcoming, setFilteredUpcoming] = useState<any[]>([]);
+  const [filteredPast, setFilteredPast] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('saved_event_ids') || '[]');
@@ -39,34 +48,25 @@ const PublicEvents = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       const oneWeekAgo = subDays(new Date(), 7);
+      const today = new Date();
 
-      console.log('PublicEvents: Fetching all events...');
-      // Fetch all events
+      // Optimized query: only fetch essential fields and limit initial results
       const { data, error } = await supabase
         .from('events')
-        .select('*')
-        .order('event_date', { ascending: false });
-
-      console.log('PublicEvents: Query result:', {
-        eventsCount: data?.length || 0,
-        error: error,
-        data: data
-      });
+        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, cover_image')
+        .gte('event_date', oneWeekAgo.toISOString())
+        .order('event_date', { ascending: true })
+        .limit(ITEMS_PER_PAGE * 2); // Load initial batch
 
       if (data) {
-        // Separate upcoming and past events (1 week old)
-        const upcoming = data.filter(event => isAfter(new Date(event.event_date), new Date()));
+        const upcoming = data.filter(event => isAfter(new Date(event.event_date), today));
         const past = data.filter(event => isPast(new Date(event.event_date)) && isAfter(new Date(event.event_date), oneWeekAgo));
 
-        console.log('PublicEvents: Filtered results:', {
-          upcomingCount: upcoming.length,
-          pastCount: past.length
-        });
-
-        setUpcomingEvents(upcoming.reverse()); // Show upcoming in ascending order
-        setPastEvents(past); // Show past in descending order (most recent first)
-        setFilteredUpcoming(upcoming.reverse());
+        setUpcomingEvents(upcoming);
+        setPastEvents(past);
+        setFilteredUpcoming(upcoming);
         setFilteredPast(past);
+        setHasMore(data.length === ITEMS_PER_PAGE * 2);
       }
       setLoading(false);
     };
@@ -162,6 +162,7 @@ const PublicEvents = () => {
             <img
               src={event.image_url}
               alt={event.title}
+              loading="lazy"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
@@ -259,37 +260,7 @@ const PublicEvents = () => {
     return (
       <div className="min-h-screen p-4 md:p-8 animate-in fade-in-50 duration-500">
         <div className="container mx-auto max-w-6xl">
-          {/* Header Skeleton */}
-          <div className="text-center mb-8">
-            <Skeleton className="h-12 w-3/4 md:w-1/2 mx-auto mb-4 rounded-xl" />
-            <Skeleton className="h-6 w-1/2 md:w-1/3 mx-auto rounded-lg" />
-          </div>
-
-          {/* Search Skeleton */}
-          <Skeleton className="h-48 w-full rounded-xl mb-8" />
-
-          {/* Cards Grid Skeleton */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="border border-primary/10 rounded-xl overflow-hidden bg-card/50 backdrop-blur-sm">
-                <Skeleton className="h-48 w-full" />
-                <div className="p-6 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <Skeleton className="h-6 w-2/3 rounded-md" />
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                  </div>
-                  <Skeleton className="h-4 w-1/2 rounded-md" />
-
-                  <div className="space-y-2 pt-2">
-                    <Skeleton className="h-4 w-full rounded-md" />
-                    <Skeleton className="h-4 w-3/4 rounded-md" />
-                  </div>
-
-                  <Skeleton className="h-10 w-full rounded-lg mt-4" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <EventGridSkeleton count={9} />
         </div>
       </div>
     );
