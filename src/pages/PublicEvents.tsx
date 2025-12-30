@@ -12,6 +12,18 @@ import { toast } from 'sonner';
 import { EventGridSkeleton } from '@/components/skeletons/EventCardSkeleton';
 import { format, isAfter, isPast, subDays } from 'date-fns';
 
+const CATEGORIES = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'party', label: 'Party' },
+  { value: 'concert', label: 'Concert' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'conference', label: 'Conference' },
+  { value: 'workshop', label: 'Workshop' },
+  { value: 'festival', label: 'Festival' },
+  { value: 'food', label: 'Food & Dining' },
+  { value: 'general', label: 'General' }
+];
+
 const PublicEvents = () => {
   const navigate = useNavigate();
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -19,7 +31,9 @@ const PublicEvents = () => {
   const [filteredUpcoming, setFilteredUpcoming] = useState<any[]>([]);
   const [filteredPast, setFilteredPast] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming');
   const [savedIds, setSavedIds] = useState<string[]>([]);
