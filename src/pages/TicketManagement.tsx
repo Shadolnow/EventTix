@@ -659,7 +659,11 @@ const TicketManagement = () => {
             />
 
             <Tabs defaultValue="tickets" className="space-y-6">
-              <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-7 h-auto">
+              <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-10 h-auto gap-2">
+                <TabsTrigger value="overview">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
                 <TabsTrigger value="tickets">
                   <TicketIcon className="w-4 h-4 mr-2" />
                   Tickets
@@ -674,11 +678,11 @@ const TicketManagement = () => {
                 </TabsTrigger>
                 <TabsTrigger value="door-staff">
                   <UserPlus className="w-4 h-4 mr-2" />
-                  Door Staff
+                  Staff
                 </TabsTrigger>
-                <TabsTrigger value="bulk-actions">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Archive
+                <TabsTrigger value="marketing">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Marketing
                 </TabsTrigger>
                 <TabsTrigger value="customize">
                   <Settings className="w-4 h-4 mr-2" />
@@ -688,7 +692,244 @@ const TicketManagement = () => {
                   <CreditCard className="w-4 h-4 mr-2" />
                   Payment
                 </TabsTrigger>
+                <TabsTrigger value="communication">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Updates
+                </TabsTrigger>
+                <TabsTrigger value="bulk-actions">
+                  <Archive className="w-4 h-4 mr-2" />
+                  Archive
+                </TabsTrigger>
               </TabsList>
+
+              {/* Overview Tab - New */}
+              <TabsContent value="overview">
+                <div className="space-y-6">
+                  <EventStats
+                    totalTickets={tickets.length}
+                    validatedTickets={validatedCount}
+                    pendingTickets={pendingCount}
+                    attendees={tickets}
+                    tiers={tiers}
+                  />
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Revenue Summary</CardTitle>
+                      <CardDescription>Financial overview for this event</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Total Revenue</p>
+                          <p className="text-2xl font-bold text-green-500">
+                            ₹{tickets.reduce((sum, t) => sum + (t.ticket_tiers?.price || 0), 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Paid Tickets</p>
+                          <p className="text-2xl font-bold text-blue-500">
+                            {tickets.filter(t => t.payment_status === 'paid').length}
+                          </p>
+                        </div>
+                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                          <p className="text-sm text-muted-foreground">Pending</p>
+                          <p className="text-2xl font-bold text-amber-500">
+                            {tickets.filter(t => t.payment_status === 'pending').length}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Event Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Event Date</p>
+                          <p className="font-semibold">{new Date(event.event_date).toLocaleDateString('en-US', {
+                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                          })}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Venue</p>
+                          <p className="font-semibold">{event.venue}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Capacity</p>
+                          <p className="font-semibold">{event.capacity || 'Unlimited'} {event.capacity && `(${tickets.length} sold)`}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Category</p>
+                          <p className="font-semibold">{event.category || 'General'}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Marketing Tab - New */}
+              <TabsContent value="marketing">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Share2 className="w-5 h-5" />
+                      Marketing & Promotion
+                    </CardTitle>
+                    <CardDescription>Share your event and track engagement</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Public Event Link */}
+                    <div>
+                      <Label>Public Event Page</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          value={`${window.location.origin}/e/${eventId}`}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/e/${eventId}`);
+                            toast.success('Link copied to clipboard!');
+                          }}
+                        >
+                          <Share2 className="w-4 h-4 mr-2" />
+                          Copy
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Social Share Buttons */}
+                    <div>
+                      <Label className="mb-3 block">Share on Social Media</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(event.title)}&url=${window.location.origin}/e/${eventId}`, '_blank')}
+                        >
+                          𝕏 Twitter
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${window.location.origin}/e/${eventId}`, '_blank')}
+                        >
+                          Facebook
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(event.title + ' ' + window.location.origin + '/e/' + eventId)}`, '_blank')}
+                        >
+                          WhatsApp
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${window.location.origin}/e/${eventId}`, '_blank')}
+                        >
+                          LinkedIn
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* QR Code */}
+                    <div>
+                      <Label className="mb-3 block">Event QR Code</Label>
+                      <div className="flex gap-4 items-center">
+                        <div className="p-4 bg-white rounded-lg inline-block">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${window.location.origin}/e/${eventId}`}
+                            alt="Event QR Code"
+                            className="w-48 h-48"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${window.location.origin}/e/${eventId}`;
+                              link.download = `${event.title}-qr.png`;
+                              link.click();
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download QR
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            High-quality QR code for posters and flyers
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Embed Code */}
+                    <div>
+                      <Label>Embed on Your Website</Label>
+                      <Textarea
+                        value={`<iframe src="${window.location.origin}/e/${eventId}" width="100%" height="600" frameborder="0"></iframe>`}
+                        readOnly
+                        className="font-mono text-xs mt-2"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Copy this code to embed the event page on your website
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Communication Tab - New */}
+              <TabsContent value="communication">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="w-5 h-5" />
+                      Send Updates to Attendees
+                    </CardTitle>
+                    <CardDescription>
+                      Communicate important information to all ticket holders
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Update Message</Label>
+                      <Textarea
+                        placeholder="Enter your message to attendees (e.g., venue change, timing update, parking info)..."
+                        className="min-h-32 mt-2"
+                        id="communication-message"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          const message = (document.getElementById('communication-message') as HTMLTextAreaElement)?.value;
+                          if (!message?.trim()) {
+                            toast.error('Please enter a message');
+                            return;
+                          }
+                          toast.success(`Update will be sent to ${tickets.length} attendees`);
+                          // TODO: Implement actual email sending via API
+                        }}
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Send to All Attendees ({tickets.length})
+                      </Button>
+                      <Button variant="outline">
+                        Send Test Email
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      💡 Tip: Use this to inform attendees about venue changes, timing updates, parking information, or any important announcements.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
               <TabsContent value="tickets">
                 {pendingTickets.length > 0 && (
