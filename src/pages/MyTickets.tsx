@@ -38,14 +38,12 @@ const MyTickets = () => {
         setSearched(true);
 
         try {
-            // 3-FACTOR VERIFICATION QUERY
-            const { data, error } = await supabase
-                .from('tickets')
-                .select('*, events(*), ticket_tiers(*)')
-                .eq('attendee_email', email.toLowerCase())
-                .eq('attendee_phone', phone)
-                .eq('security_pin', pin)
-                .order('created_at', { ascending: false });
+            // 3-FACTOR SECURE RPC GATEWAY
+            const { data, error } = await supabase.rpc('get_tickets_by_credentials', {
+                p_email: email.toLowerCase().trim(),
+                p_phone: phone.trim(),
+                p_pin: pin.trim()
+            });
 
             if (error) {
                 console.error('Query error:', error);

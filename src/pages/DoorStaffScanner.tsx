@@ -201,18 +201,18 @@ const DoorStaffScanner = () => {
 
         try {
             // Verify Logic
-            // 1. Fetch ticket
-            const { data: ticket, error } = await supabase
-                .from('tickets')
-                .select('*')
-                .eq('ticket_code', ticketCode)
-                .single();
+            // 1. Fetch ticket using Secure RPC (Prevents data harvesting)
+            const { data: ticket, error: rpcError } = await supabase.rpc('verify_ticket_as_staff', {
+                p_ticket_code: ticketCode,
+                p_access_code: accessCode
+            });
 
-            if (error || !ticket) {
+            if (rpcError || !ticket) {
+                console.error("RPC Error:", rpcError);
                 playSound('error');
                 setScanResult({
                     status: 'error',
-                    message: 'Ticket Not Found'
+                    message: rpcError?.message?.includes('access code') ? 'Invalid Session' : 'Ticket Not Found'
                 });
                 return;
             }
