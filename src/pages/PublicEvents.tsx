@@ -69,7 +69,7 @@ const PublicEvents = () => {
       // 1. Fetch Upcoming Events (Future)
       const { data: upcoming, error: upcomingError } = await supabase
         .from('events')
-        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, created_by')
+        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, menu_pdf_url')
         .gte('event_date', today.toISOString())
         .order('event_date', { ascending: true });
 
@@ -81,7 +81,7 @@ const PublicEvents = () => {
       // 2. Fetch Recent Past Events (Last 7 days)
       const { data: past, error: pastError } = await supabase
         .from('events')
-        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, created_by')
+        .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url, menu_pdf_url')
         .lt('event_date', today.toISOString())
         .gte('event_date', oneWeekAgo.toISOString())
         .order('event_date', { ascending: false }); // Most recent past first
