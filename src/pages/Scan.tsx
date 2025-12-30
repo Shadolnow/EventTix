@@ -282,7 +282,14 @@ const Scan = () => {
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="p-0 aspect-square relative bg-black">
+          <CardContent className="p-0 aspect-square relative bg-black min-h-[300px]">
+            {/* Warning for non-secure context */}
+            {window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && (
+              <div className="absolute top-0 left-0 right-0 z-50 bg-destructive text-destructive-foreground p-2 text-xs text-center font-bold">
+                ⚠️ Camera blocked! Use HTTPS or localhost.
+              </div>
+            )}
+
             {lastScan ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-background z-20 p-6 text-center animate-in fade-in">
                 {lastScan.status === 'valid' ? (
@@ -312,13 +319,25 @@ const Scan = () => {
               <div className="relative w-full h-full">
                 <Scanner
                   onScan={handleScan}
-                  onError={(err) => setCameraError(err?.message || 'Camera Error')}
-                  constraints={{ facingMode }}
+                  onError={(err) => {
+                    console.error("Scanner Error:", err);
+                    setIsScanning(false);
+                    if (err?.message?.includes('Permission') || err?.name === 'NotAllowedError') {
+                      setCameraError('Camera permission denied. Please allow camera access.');
+                    } else {
+                      setCameraError(err?.message || 'Failed to start camera');
+                    }
+                  }}
+                  constraints={{
+                    facingMode
+                  }}
                   styles={{
                     container: { width: '100%', height: '100%' },
-                    video: { objectFit: 'cover' }
+                    video: { width: '100%', height: '100%', objectFit: 'cover' }
                   }}
                   components={{ audio: false }} // We handle audio manually
+                  scanDelay={500} // Reduce load
+                  allowMultiple={true}
                 />
 
                 {/* Overlay */}
