@@ -57,6 +57,7 @@ const TicketManagement = () => {
   // Bulk Delete States
   const [selectedTickets, setSelectedTickets] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [tiers, setTiers] = useState<any[]>([]);
 
   useEffect(() => {
     if (searchParams.get('openGenerate') === 'true') {
@@ -87,14 +88,23 @@ const TicketManagement = () => {
 
       setEvent(eventData);
 
-      // Fetch tickets
+      // Fetch tickets with tier info
       const { data: ticketsData } = await (supabase as any)
         .from('tickets')
-        .select('*, events(*)')
+        .select('*, events(*), ticket_tiers(*)')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
 
       if (ticketsData) setTickets(ticketsData);
+
+      // Fetch Tiers for capacity bars
+      const { data: tiersData } = await (supabase as any)
+        .from('ticket_tiers')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('is_active', true);
+
+      if (tiersData) setTiers(tiersData);
 
       // Fetch Bank Account
       const { data: bankData } = await (supabase as any)
@@ -620,6 +630,7 @@ const TicketManagement = () => {
               validatedTickets={validatedCount}
               pendingTickets={pendingCount}
               attendees={tickets}
+              tiers={tiers}
             />
 
             <Tabs defaultValue="tickets" className="space-y-6">

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Camera, CheckCircle2, XCircle, BarChart3, AlertCircle, Upload, SwitchCamera, Wifi, WifiOff, RefreshCw, Database, Flashlight } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, XCircle, BarChart3, AlertCircle, Upload, SwitchCamera, Wifi, WifiOff, RefreshCw, Database, Flashlight, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '@/components/AuthProvider';
@@ -35,6 +35,7 @@ const Scan = () => {
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [scannerStatus, setScannerStatus] = useState<'idle' | 'starting' | 'scanning' | 'error'>('idle');
   const [hasTorch, setHasTorch] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
 
   useEffect(() => {
     // Require authentication to access scanner
@@ -148,6 +149,14 @@ const Scan = () => {
     oscillator.stop(audioContext.currentTime + 0.4);
   };
 
+  const speak = (text: string) => {
+    if (!isVoiceEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    window.speechSynthesis.speak(utterance);
+  };
+
   const updateRecentScans = (scan: any) => {
     setRecentScans(prev => {
       const newList = [scan, ...prev];
@@ -197,7 +206,7 @@ const Scan = () => {
         // ONLINE VALIDATION (Primary)
         const { data: ticket, error } = await (supabase as any)
           .from('tickets')
-          .select('*, events(*)')
+          .select('*, events(*), ticket_tiers(*)')
           .eq('ticket_code', ticketCode)
           .maybeSingle();
 
@@ -257,6 +266,7 @@ const Scan = () => {
           message: 'Ticket Expired (Unpaid > 24h)',
           ticket: ticketTyped
         });
+        speak('Ticket Expired');
         return;
       }
 
@@ -286,6 +296,7 @@ const Scan = () => {
           ticket: ticketTyped,
           requiresPayment: true
         });
+        speak('Payment Required');
         return;
       }
 
@@ -316,6 +327,7 @@ const Scan = () => {
           message: 'Already validated by another scanner',
           ticket: ticketTyped
         });
+        speak('Already validated');
         return;
       }
 
@@ -324,6 +336,9 @@ const Scan = () => {
         description: `${ticketTyped.attendee_name} - ${ticketTyped.events.title}`,
         duration: 4000,
       });
+
+      const tierName = ticketTyped.ticket_tiers?.name || ticketTyped.tier_name || 'Entry Pass';
+      speak(`${tierName} Valid`);
 
       // Update state immediately for visual feedback
       setLastScan({
@@ -365,6 +380,7 @@ const Scan = () => {
       playErrorSound();
       toast.error('Validation failed');
       setLastScan({ success: false, message: 'Validation error', code: ticketCode });
+      speak('Invalid Ticket');
     }
   };
 
@@ -757,6 +773,20 @@ const Scan = () => {
                         <Flashlight className={`w-5 h-5 ${isTorchOn ? 'fill-current' : ''}`} />
                       </Button>
                     )}
+                    <Button
+                      variant={isVoiceEnabled ? "default" : "outline"}
+                      size="lg"
+                      onClick={() => {
+                        const newState = !isVoiceEnabled;
+                        setIsVoiceEnabled(newState);
+                        if (newState) speak("Voice Active");
+                        toast.info(`Voice Alerts ${newState ? 'ON' : 'OFF'}`);
+                      }}
+                      className="w-14"
+                      title="Voice Alerts"
+                    >
+                      {isVoiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                    </Button>
                     {availableCameras.length > 1 && (
                       <Button
                         variant="outline"

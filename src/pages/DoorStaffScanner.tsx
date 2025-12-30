@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Flashlight, Camera, CheckCircle, XCircle, AlertTriangle, Users } from 'lucide-react';
+import { ArrowLeft, Flashlight, Camera, CheckCircle, XCircle, AlertTriangle, Users, Volume2, VolumeX } from 'lucide-react';
 
 const DoorStaffScanner = () => {
     const { eventId } = useParams();
@@ -29,6 +29,7 @@ const DoorStaffScanner = () => {
     const [recentScans, setRecentScans] = useState<any[]>([]);
     const [hasTorch, setHasTorch] = useState(false);
     const [isTorchOn, setIsTorchOn] = useState(false);
+    const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -40,6 +41,14 @@ const DoorStaffScanner = () => {
             stopScanner();
         };
     }, [eventId]);
+
+    const speak = (text: string) => {
+        if (!isVoiceEnabled || !window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+    };
 
     const fetchEventDetails = async () => {
         const { data } = await supabase.from('events').select('title, venue, id').eq('id', eventId).single();
@@ -209,6 +218,7 @@ const DoorStaffScanner = () => {
 
             if (rpcError || !ticket) {
                 console.error("RPC Error:", rpcError);
+                speak("Invalid Ticket");
                 playSound('error');
                 setScanResult({
                     status: 'error',
@@ -219,6 +229,7 @@ const DoorStaffScanner = () => {
 
             // 2. Check Event ID
             if (ticket.event_id !== eventId) {
+                speak("Wrong Event");
                 playSound('error');
                 setScanResult({
                     status: 'invalid',
@@ -232,6 +243,7 @@ const DoorStaffScanner = () => {
             const isPaid = (ticket as any).payment_status === 'paid' || (ticket as any).payment_status === 'success';
 
             if (!isPaid) {
+                speak("Unpaid Ticket");
                 playSound('error');
                 setScanResult({
                     status: 'invalid',
@@ -255,6 +267,7 @@ const DoorStaffScanner = () => {
                         time: new Date(checkInTime).toLocaleTimeString()
                     }
                 });
+                speak("Already Checked In");
             } else {
                 // Success - Check in
                 const { data: updated, error: updateError } = await supabase
@@ -282,7 +295,8 @@ const DoorStaffScanner = () => {
                 }
 
                 playSound('success');
-                updateRecentScans(ticket, 'valid');
+                const tierName = (ticket as any).ticket_tiers?.name || (ticket as any).tier_name || 'Standard Pass';
+                speak(`${tierName} Valid`);
                 setScanResult({
                     status: 'valid',
                     message: 'Check-in Successful',
@@ -408,6 +422,20 @@ const DoorStaffScanner = () => {
                                                 <Flashlight className={`w-5 h-5 ${isTorchOn ? 'fill-current' : ''}`} />
                                             </Button>
                                         )}
+                                        <Button
+                                            onClick={() => {
+                                                const newState = !isVoiceEnabled;
+                                                setIsVoiceEnabled(newState);
+                                                if (newState) speak("Voice Active");
+                                                toast.info(`Voice Alerts ${newState ? 'ON' : 'OFF'}`);
+                                            }}
+                                            variant={isVoiceEnabled ? "default" : "outline"}
+                                            size="lg"
+                                            className={`w-14 h-12 ${isVoiceEnabled ? 'bg-cyan-600 text-white border-cyan-500' : 'text-white border-white/20'}`}
+                                            title="Voice Alerts"
+                                        >
+                                            {isVoiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                                        </Button>
                                     </div>
 
                                     {availableCameras.length > 1 && (
