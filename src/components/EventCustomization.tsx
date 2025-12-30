@@ -229,10 +229,10 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
 
     setUploadingMenu(true);
     try {
-      const fileName = `${userId}/menus/${eventId}/menu_${Date.now()}.pdf`;
+      const fileName = `${userId}/documents/${eventId}/document_${Date.now()}.pdf`;
 
       const { error: uploadError } = await supabase.storage
-        .from('event-documents')
+        .from('event-images')
         .upload(fileName, file, {
           contentType: 'application/pdf',
           upsert: true
@@ -241,17 +241,30 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('event-documents')
+        .from('event-images')
         .getPublicUrl(fileName);
 
       setMenuPdfUrl(publicUrl);
-      toast.success('Menu PDF uploaded successfully!');
+
+      // Save to database immediately
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ menu_pdf_url: publicUrl })
+        .eq('id', eventId);
+
+      if (updateError) {
+        console.error('Error saving document URL:', updateError);
+        toast.error('Document uploaded but failed to save. Please try again.');
+        return;
+      }
+
+      toast.success('Key Document uploaded successfully!');
 
       // Reset file input
       e.target.value = '';
     } catch (error: any) {
-      console.error('Menu PDF upload error:', error);
-      toast.error(`Failed to upload menu: ${error.message}`);
+      console.error('Document upload error:', error);
+      toast.error(`Failed to upload document: ${error.message}`);
     } finally {
       setUploadingMenu(false);
     }
@@ -778,19 +791,19 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
         </CardContent>
       </Card>
 
-      {/* Menu PDF Upload */}
+      {/* Key Documents PDF Upload */}
       <Card className="border-2 border-orange-500/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            📋 Event Menu/Program (PDF)
+            📋 Event Key Documents (PDF)
           </CardTitle>
           <CardDescription>
-            Upload a PDF menu or program schedule for attendees to view
+            Upload PDF documents for attendees (menus, maps, schedules, etc.)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="menuPdf">Upload Menu PDF (Max 10MB)</Label>
+            <Label htmlFor="menuPdf">Upload Key Documents PDF (Max 10MB)</Label>
             <Input
               id="menuPdf"
               type="file"
@@ -800,7 +813,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
               className="mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Perfect for restaurant menus, food festivals, conference programs, or event schedules
+              Perfect for event menus, floor plans, programs, or schedules
             </p>
           </div>
 

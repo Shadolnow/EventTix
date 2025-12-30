@@ -1,94 +1,78 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { hapticMedium, hapticSuccess } from '@/utils/haptics';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
-interface UsePullToRefreshOptions {
-    onRefresh: () => Promise<void>;
-    threshold?: number;
-    resistance?: number;
-}
-
-export const usePullToRefresh = ({
-    onRefresh,
-    threshold = 80,
-    resistance = 2.5,
-}: UsePullToRefreshOptions) => {
-    const [isPulling, setIsPulling] = useState(false);
-    const [pullDistance, setPullDistance] = useState(0);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const startY = useRef(0);
-    const currentY = useRef(0);
-
-    const handleRefresh = useCallback(async () => {
-        setIsRefreshing(true);
-        hapticSuccess(); // Tactile feedback when refresh starts
-
-        try {
-            await onRefresh();
-        } finally {
-            setIsRefreshing(false);
-            setIsPulling(false);
-            setPullDistance(0);
-        }
-    }, [onRefresh]);
-
+/**
+ * Pull-to-Refresh Component
+ * Enables native-like pull to refresh on mobile
+ */
+export const usePullToRefresh = (onRefresh: () => Promise<void>) => {
     useEffect(() => {
+        let touchStart = 0;
+        let touchEnd = 0;
+        let pullDistance = 0;
+        const threshold = 80; // Pull distance required to trigger refresh
+
         const handleTouchStart = (e: TouchEvent) => {
             // Only trigger if at top of page
-            if (window.scrollY === 0) {
-                startY.current = e.touches[0].clientY;
+            if (window.scrollY <= 0) {
+                touchStart = e.touches[0].clientY;
             }
         };
 
         const handleTouchMove = (e: TouchEvent) => {
-            if (startY.current === 0 || isRefreshing) return;
+            if (touchStart === 0) return;
 
-            currentY.current = e.touches[0].clientY;
-            const distance = currentY.current - startY.current;
+            touchEnd = e.touches[0].clientY;
+            pullDistance = touchEnd - touchStart;
 
-            // Only pull down (positive distance)
-            if (distance > 0 && window.scrollY === 0) {
-                // Apply resistance to make it feel natural
-                const resistedDistance = distance / resistance;
+            // Visual feedback
+            if (pullDistance > 0 && pullDistance < threshold) {
+                document.body.style.transform = `translateY(${pullDistance / 3}px)`;
+                document.body.style.transition = 'transform 0.1s ease-out';
+            }
+        };
 
-                if (resistedDistance < threshold * 1.5) {
-                    setPullDistance(resistedDistance);
-                    setIsPulling(true);
-
-                    // Haptic feedback at threshold
-                    if (resistedDistance >= threshold && pullDistance < threshold) {
-                        hapticMedium();
-                    }
+        const handleTouchEnd = async () => {
+            if (pullDistance >= threshold) {
+                toast.info('Refreshing...');
+                try {
+                    await onRefresh();
+                    toast.success('Refreshed successfully!');
+                } catch (error) {
+                    toast.error('Failed to refresh');
                 }
             }
+
+            // Reset
+            document.body.style.transform = '';
+            document.body.style.transition = '';
+            touchStart = 0;
+            touchEnd = 0;
+            pullDistance = 0;
         };
 
-        const handleTouchEnd = () => {
-            if (pullDistance >= threshold && !isRefreshing) {
-                handleRefresh();
-            } else {
-                setIsPulling(false);
-                setPullDistance(0);
-            }
-
-            startY.current = 0;
-            currentY.current = 0;
-        };
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: true });
-        window.addEventListener('touchmove', handleTouchMove, { passive: true });
-        window.addEventListener('touchend', handleTouchEnd);
+        // Only enable on mobile
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.addEventListener('touchstart', handleTouchStart, { passive: true });
+            document.addEventListener('touchmove', handleTouchMove, { passive: true });
+            document.addEventListener('touchend', handleTouchEnd);
+        }
 
         return () => {
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
+            if (isMobile) {
+                document.removeEventListener('touchstart', handleTouchStart);
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+            }
         };
-    }, [pullDistance, threshold, resistance, isRefreshing, handleRefresh]);
+    }, [onRefresh]);
+};
 
-    return {
-        isPulling,
-        pullDistance,
-        isRefreshing,
-        showIndicator: isPulling || isRefreshing,
+// HOC for pages that need pull-to-refresh
+export const withPullToRefresh = (Component: React.ComponentType, onRefresh: () => Promise<void>) => {
+    return (props: any) => {
+        usePullToRefresh(onRefresh);
+        return <Component { ...props } />;
     };
 };

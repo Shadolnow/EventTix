@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { lazy, Suspense } from "react";
 import AuthRoute from "@/components/RouteGuards/AuthRoute";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import PWAUpdateNotification from "@/components/PWAUpdateNotification";
 import { ParticleBackground } from "@/components/ui/ParticleBackground";
 import { Sparkles } from "lucide-react";
@@ -131,6 +132,7 @@ const App = () => (
             </div>
           </BrowserRouter>
           <PWAInstallPrompt />
+          <PushNotificationPrompt />
           <PWAUpdateNotification />
         </TooltipProvider>
       </ThemeProvider>
