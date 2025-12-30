@@ -577,21 +577,51 @@ const Scan = () => {
       });
 
     } catch (err: any) {
-      console.error('Final Scanner Error:', err);
+      console.error('═══════════════════════════════════════');
+      console.error('🚨 SCANNER ERROR DETAILS:');
+      console.error('Error Name:', err?.name);
+      console.error('Error Message:', err?.message);
+      console.error('Full Error:', err);
+      console.error('═══════════════════════════════════════');
+
       setScannerStatus('error');
       setIsScanning(false);
 
       let errorMessage = 'Unable to access camera.';
+      let errorHint = '';
+
       if (err?.name === 'NotAllowedError' || err?.message?.includes('permission')) {
-        errorMessage = 'Camera permission denied. Please enable it in browser settings.';
+        errorMessage = 'Camera permission denied';
+        errorHint = 'Click the lock icon (🔒) in your browser address bar and allow camera access.';
       } else if (err?.name === 'NotFoundError') {
-        errorMessage = 'No camera found on this device.';
+        errorMessage = 'No camera found on this device';
+        errorHint = 'Try using your mobile phone, or use Manual Entry below.';
+      } else if (err?.name === 'NotReadableError') {
+        errorMessage = 'Camera is being used by another app';
+        errorHint = 'Close other apps (Zoom, Skype, etc.) and try again.';
+      } else if (err?.name === 'OverconstrainedError') {
+        errorMessage = 'Camera settings not supported';
+        errorHint = 'Try a different browser (Chrome or Safari recommended).';
       } else if (err?.message?.includes('already scanning')) {
-        errorMessage = 'Scanner is already initializing. Please wait.';
+        errorMessage = 'Scanner is already initializing';
+        errorHint = 'Please wait a few seconds, then refresh the page.';
+      } else {
+        errorHint = 'Try refreshing the page or use Manual Entry below.';
       }
 
       setCameraError(errorMessage);
-      toast.error('Camera Error', { description: errorMessage });
+
+      toast.error('Camera Error', {
+        description: `${errorMessage}. ${errorHint}`,
+        duration: 8000
+      });
+
+      console.log('💡 TROUBLESHOOTING TIPS:');
+      console.log('1. Grant camera permissions in browser settings');
+      console.log('2. Close other apps using the camera');
+      console.log('3. Try a different browser (Chrome/Safari)');
+      console.log('4. Use Manual Entry as a fallback');
+      console.log('5. Check CAMERA_TROUBLESHOOTING.md for detailed help');
     }
   };
 
