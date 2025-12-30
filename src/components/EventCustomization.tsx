@@ -53,6 +53,7 @@ interface EventCustomizationProps {
     event_date?: string; // Added for date editing
     coverImageUrl?: string; // Main event cover image
     venue?: string; // Venue/location
+    menuPdfUrl?: string; // Menu PDF URL
   };
 }
 
@@ -99,8 +100,10 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
   const [eventDate, setEventDate] = useState(formatDateForInput(initialData?.event_date)); // Event date in local format
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || ''); // Main event cover image
   const [venue, setVenue] = useState(initialData?.venue || ''); // Venue/location
+  const [menuPdfUrl, setMenuPdfUrl] = useState(initialData?.menuPdfUrl || ''); // Menu PDF
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingMenu, setUploadingMenu] = useState(false);
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
@@ -203,6 +206,54 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
       toast.error(`Failed to upload cover image: ${error.message}`);
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  // Upload Menu PDF
+  const handleMenuPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('PDF file too large. Maximum size is 10MB');
+      return;
+    }
+
+    setUploadingMenu(true);
+    try {
+      const fileName = `${userId}/menus/${eventId}/menu_${Date.now()}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('event-documents')
+        .upload(fileName, file, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-documents')
+        .getPublicUrl(fileName);
+
+      setMenuPdfUrl(publicUrl);
+      toast.success('Menu PDF uploaded successfully!');
+
+      // Reset file input
+      e.target.value = '';
+    } catch (error: any) {
+      console.error('Menu PDF upload error:', error);
+      toast.error(`Failed to upload menu: ${error.message}`);
+    } finally {
+      setUploadingMenu(false);
     }
   };
 
@@ -466,7 +517,8 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
           qr_code_url: paymentQrImageUrl || null,
           discount_percent: discountPercent,
           event_date: eventDate ? formatDateForDb(eventDate) : null, // Convert local time to UTC
-          venue: venue || null // Update venue
+          venue: venue || null, // Update venue
+          menu_pdf_url: menuPdfUrl || null // Menu PDF
         })
         .eq('id', eventId);
 
@@ -722,6 +774,68 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
                   </Button>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Menu PDF Upload */}
+      <Card className="border-2 border-orange-500/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            📋 Event Menu/Program (PDF)
+          </CardTitle>
+          <CardDescription>
+            Upload a PDF menu or program schedule for attendees to view
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="menuPdf">Upload Menu PDF (Max 10MB)</Label>
+            <Input
+              id="menuPdf"
+              type="file"
+              accept="application/pdf"
+              onChange={handleMenuPdfUpload}
+              disabled={uploadingMenu}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Perfect for restaurant menus, food festivals, conference programs, or event schedules
+            </p>
+          </div>
+
+          {menuPdfUrl && (
+            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/20 rounded">
+                    <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-green-500">Menu PDF Uploaded</p>
+                    <p className="text-xs text-muted-foreground">Attendees can view and download this menu</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(menuPdfUrl, '_blank')}
+                  >
+                    View PDF
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMenuPdfUrl('')}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
