@@ -515,26 +515,36 @@ const Scan = () => {
       const scanner = new Html5Qrcode('qr-reader', { verbose: false });
       scannerRef.current = scanner;
 
-      // 1. Get available cameras
+      // === AGGRESSIVE BACK CAMERA SELECTION ===
+      // Get ALL available cameras
       const cameras = await Html5Qrcode.getCameras().catch(() => []);
       setAvailableCameras(cameras);
 
-      let cameraConfig: any = { facingMode: "environment" };
+      console.log('📷 Available cameras:', cameras);
 
-      // Priority 1: User selected camera
-      if (selectedCameraId && cameras.some(c => c.id === selectedCameraId)) {
-        cameraConfig = selectedCameraId;
-      }
-      // Priority 2: Try to find a back camera ID if we haven't already
-      else if (cameras.length > 0) {
-        const backCamera = cameras.find(cam =>
-          /back|rear|environment|main|out/i.test(cam.label)
-        );
-        if (backCamera) {
-          cameraConfig = backCamera.id;
-          setSelectedCameraId(backCamera.id);
-        }
-      }
+      let selectedCamera: any = null;
+
+      // Strategy 1: Find camera with "back/rear/environment" in label
+      const backCameraByLabel = cameras.find(cam =>
+        /back|rear|environment|traseira|arrière|главная|后置/i.test(cam.label || '')
+      );
+
+      // Strategy 2: On mobile, the LAST camera is usually the back camera
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const lastCamera = cameras.length > 0 ? cameras[cameras.length - 1] : null;
+
+      // Strategy 3: User's previously selected camera
+      const userSelectedCamera = selectedCameraId && cameras.find(c => c.id === selectedCameraId);
+
+      // Choose in this priority order:
+      selectedCamera = userSelectedCamera || backCameraByLabel || (isMobile ? lastCamera : null);
+
+      console.log('📷 Selected camera:', selectedCamera);
+
+      // Use camera ID if found, otherwise fall back to environment constraint
+      const cameraConfig = selectedCamera ? selectedCamera.id : { facingMode: { exact: "environment" } };
+
+      console.log('📷 Camera config:', cameraConfig);
 
       await scanner.start(
         cameraConfig,
@@ -542,16 +552,11 @@ const Scan = () => {
           fps: 20,
           qrbox: (viewfinderWidth, viewfinderHeight) => {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const size = Math.floor(minEdge * 0.85); // Larger box
+            const size = Math.floor(minEdge * 0.9); // 90% for easier scanning
             return { width: size, height: size };
           },
           aspectRatio: 1.0,
-          disableFlip: true,
-          videoConstraints: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
+          disableFlip: true
         },
         (decodedText) => {
           if (navigator.vibrate) navigator.vibrate(100);

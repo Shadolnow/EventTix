@@ -93,9 +93,11 @@ const DoorStaffScanner = () => {
             setScanResult(null);
             setScannerStatus('starting');
 
-            // Get cameras for selection
+            // === AGGRESSIVE BACK CAMERA SELECTION ===
             const devices = await Html5Qrcode.getCameras().catch(() => []);
             setAvailableCameras(devices);
+
+            console.log('📷 [Door Staff] Available cameras:', devices);
 
             // Small delay for DOM to render the container
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -103,12 +105,29 @@ const DoorStaffScanner = () => {
             const html5QrCode = new Html5Qrcode("reader", { verbose: false });
             scannerRef.current = html5QrCode;
 
-            let targetCamera: any = { facingMode: "environment" };
+            let selectedCamera: any = null;
 
-            // If we have a preferred camera ID, use it, otherwise stay with environment mode
-            if (cameraId && devices.some(d => d.id === cameraId)) {
-                targetCamera = cameraId;
-            }
+            // Strategy 1: Find camera with "back/rear/environment" in label
+            const backCameraByLabel = devices.find(cam =>
+                /back|rear|environment|traseira|arrière|главная|后置/i.test(cam.label || '')
+            );
+
+            // Strategy 2: On mobile, the LAST camera is usually the back camera
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const lastCamera = devices.length > 0 ? devices[devices.length - 1] : null;
+
+            // Strategy 3: User's previously selected camera
+            const userSelectedCamera = cameraId && devices.find(d => d.id === cameraId);
+
+            // Choose in this priority order:
+            selectedCamera = userSelectedCamera || backCameraByLabel || (isMobile ? lastCamera : null);
+
+            console.log('📷 [Door Staff] Selected camera:', selectedCamera);
+
+            // Use camera ID if found, otherwise fall back to environment constraint
+            const targetCamera = selectedCamera ? selectedCamera.id : { facingMode: { exact: "environment" } };
+
+            console.log('📷 [Door Staff] Camera config:', targetCamera);
 
             await html5QrCode.start(
                 targetCamera,
@@ -116,16 +135,11 @@ const DoorStaffScanner = () => {
                     fps: 20,
                     qrbox: (viewfinderWidth, viewfinderHeight) => {
                         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                        const size = Math.floor(minEdge * 0.85);
+                        const size = Math.floor(minEdge * 0.9); // 90% for easier scanning
                         return { width: size, height: size };
                     },
                     aspectRatio: 1.0,
-                    disableFlip: true,
-                    videoConstraints: {
-                        facingMode: { ideal: "environment" },
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
+                    disableFlip: true
                 },
                 (decodedText) => {
                     if (navigator.vibrate) navigator.vibrate(100);
