@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getUserFriendlyError } from '@/lib/errorHandler';
-import { ArrowLeft, Shield, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Shield, Edit, Trash2, ExternalLink, LayoutDashboard } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -187,6 +187,12 @@ const AdminEvents = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <Link to={`/event/${event.id}/tickets`}>
+                            <Button variant="outline" size="sm" className="text-primary hover:text-primary border-primary/20 hover:bg-primary/10">
+                              <LayoutDashboard className="w-4 h-4 mr-2" />
+                              Manage dashboard
+                            </Button>
+                          </Link>
                           <Link to={`/e/${event.id}`}>
                             <Button variant="ghost" size="sm">
                               <ExternalLink className="w-4 h-4" />

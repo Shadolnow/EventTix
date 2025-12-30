@@ -33,7 +33,7 @@ const attendeeSchema = z.object({
 
 const TicketManagement = () => {
   const { eventId } = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [event, setEvent] = useState<any>(null);
@@ -75,12 +75,17 @@ const TicketManagement = () => {
       await (supabase as any).rpc('expire_unpaid_tickets');
 
       // Fetch event
-      const { data: eventData, error: eventError } = await (supabase as any)
+      let query = (supabase as any)
         .from('events')
         .select('*')
-        .eq('id', eventId)
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', eventId);
+
+      // If NOT admin, enforce ownership
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: eventData, error: eventError } = await query.single();
 
       if (eventError || !eventData) {
         toast.error('Event not found or access denied');
