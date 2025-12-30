@@ -40,7 +40,7 @@ Error: **"Failed to send OTP. Please check your email."**
 
 Your localhost proxies API calls to Vercel production:
 ```
-localhost:8080/api/send-otp → https://eent-tix.vercel.app/api/send-otp
+localhost:8080/api/send-otp → https://eventtix-psi.vercel.app/api/send-otp
 ```
 
 The API code is correct, but Vercel needs the `RESEND_API_KEY` environment variable to send emails.

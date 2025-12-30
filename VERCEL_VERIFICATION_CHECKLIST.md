@@ -11,7 +11,7 @@
 | 3 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIU...` (long token) | ✅ Should be added |
 | 4 | `VITE_SUPABASE_URL` | `https://dmksigdpcb...` | ✅ Should be added |
 | 5 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIU...` (long token) | ✅ Should be added |
-| 6 | `VITE_PUBLIC_SITE_URL` | `https://eent-tix.vercel.app` | ✅ Should be added |
+| 6 | `VITE_PUBLIC_SITE_URL` | `https://eventtix-psi.vercel.app` | ✅ Should be added |
 
 ### ⏸️ Skipped (Not needed for OTP):
 

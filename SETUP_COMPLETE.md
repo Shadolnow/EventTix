@@ -49,7 +49,7 @@ Make sure ALL of these are in Vercel:
 | `SUPABASE_ANON_KEY` | `eyJhbGci...` (long token) | API database auth |
 | `VITE_SUPABASE_URL` | `https://dmksigdpcbdvyejtedju.supabase.co` | Frontend database |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGci...` (long token) | Frontend auth |
-| `VITE_PUBLIC_SITE_URL` | `https://eent-tix.vercel.app` | QR codes & links |
+| `VITE_PUBLIC_SITE_URL` | `https://eventtix-psi.vercel.app` | QR codes & links |
 
 **All values are in `VERCEL_ENV_SETUP.md` - ready to copy!**
 

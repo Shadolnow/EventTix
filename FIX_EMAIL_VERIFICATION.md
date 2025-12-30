@@ -4,7 +4,7 @@
 The "Verify Email & Continue" button shows error: **"Failed to send OTP. Please check your email."**
 
 ## 🔍 Root Cause
-Your localhost is proxying `/api` requests to **Vercel production** (`https://eent-tix.vercel.app`), but the **Resend API key** is not configured in Vercel's environment variables.
+Your localhost is proxying `/api` requests to **Vercel production** (`https://eventtix-psi.vercel.app`), but the **Resend API key** is not configured in Vercel's environment variables.
 
 ## ✅ Solution: Add Resend API Key to Vercel
 
@@ -122,7 +122,7 @@ Your vite.config.ts (lines 13-19):
 ```typescript
 proxy: {
   '/api': {
-    target: 'https://eent-tix.vercel.app',
+    target: 'https://eventtix-psi.vercel.app',
     changeOrigin: true,
     secure: true,
   }
@@ -130,7 +130,7 @@ proxy: {
 ```
 
 This means:
-- ✅ Localhost calls to `/api/send-otp` → Proxied to `https://eent-tix.vercel.app/api/send-otp`
+- ✅ Localhost calls to `/api/send-otp` → Proxied to `https://eventtix-psi.vercel.app/api/send-otp`
 - ✅ API runs on Vercel serverless functions
 - ⚠️ **Requires** Vercel to have `RESEND_API_KEY` configured
 

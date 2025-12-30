@@ -60,7 +60,7 @@ Should have Supabase variables **COMMENTED OUT** or **NOT SET**:
 # VITE_SUPABASE_ANON_KEY=...  ← Keep commented or remove
 
 # Other required variables:
-VITE_PUBLIC_SITE_URL=https://eent-tix.vercel.app
+VITE_PUBLIC_SITE_URL=https://eventtix-psi.vercel.app
 RESEND_API_KEY=re_your_api_key
 VITE_RAZORPAY_KEY_ID=rzp_test_your_key
 RAZORPAY_KEY_SECRET=your_secret_key

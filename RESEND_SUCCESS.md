@@ -29,7 +29,7 @@ Your Resend API key is in **TESTING MODE**, which means:
 #### Option 1: Verify Your Domain (Recommended)
 1. Go to: https://resend.com/domains
 2. Click **"Add Domain"**
-3. Add your domain (e.g., `eent-tix.vercel.app` or custom domain)
+3. Add your domain (e.g., `eventtix-psi.vercel.app` or custom domain)
 4. Follow DNS verification steps
 5. Wait for verification (5-10 minutes)
 6. **Done!** Can now send to ANY email address
@@ -103,7 +103,7 @@ Your Resend API key is in **TESTING MODE**, which means:
 ### Which Domain to Verify?
 
 **Option A: Vercel Domain (Quick)**
-- Domain: `eent-tix.vercel.app`
+- Domain: `eventtix-psi.vercel.app`
 - Free, already yours
 - Setup time: 5-10 minutes
 - DNS records: Add to Vercel dashboard
@@ -129,7 +129,7 @@ Subject: Your EventTix verification code: 123456
 
 ### After Domain Verification:
 ```
-From: EventTix <noreply@eent-tix.vercel.app>
+From: EventTix <noreply@eventtix-psi.vercel.app>
 To: anyone@anywhere.com  ← ANY email works!
 Subject: Your EventTix verification code: 123456
 

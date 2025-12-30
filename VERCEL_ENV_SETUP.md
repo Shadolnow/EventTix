@@ -63,7 +63,7 @@ Click **"Add New"** for each variable below:
 
 **Variable 6:**
 - **Key**: `VITE_PUBLIC_SITE_URL`
-- **Value**: `https://eent-tix.vercel.app`
+- **Value**: `https://eventtix-psi.vercel.app`
 - **Environments**: ✅ Production, ✅ Preview, ✅ Development
 - Click **Save**
 
@@ -163,7 +163,7 @@ SUPABASE_URL=https://dmksigdpcbdvyejtedju.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRta3NpZ2RwY2JkdnllanRlZGp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1ODg5MTMsImV4cCI6MjA3ODE2NDkxM30.KU4eQFj-xZJ-b-B0PBkhsqWbdQW4azxtqJXdkctCUOs
 VITE_SUPABASE_URL=https://dmksigdpcbdvyejtedju.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRta3NpZ2RwY2JkdnllanRlZGp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1ODg5MTMsImV4cCI6MjA3ODE2NDkxM30.KU4eQFj-xZJ-b-B0PBkhsqWbdQW4azxtqJXdkctCUOs
-VITE_PUBLIC_SITE_URL=https://eent-tix.vercel.app
+VITE_PUBLIC_SITE_URL=https://eventtix-psi.vercel.app
 ```
 
 ---
