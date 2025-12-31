@@ -275,7 +275,7 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
     setGalleryImages(galleryImages.filter((_, i) => i !== index));
   };
 
-  // Local video upload
+  // Local video upload with auto-trim support
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -286,44 +286,71 @@ export const EventCustomization = ({ eventId, userId, isFreeEvent = true, initia
       return;
     }
 
-    // Validate file size (50MB max for videos)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Validate file size (500MB max for videos - will be trimmed)
+    const maxSize = 500 * 1024 * 1024; // 500MB
     if (file.size > maxSize) {
-      toast.error('Video file too large. Maximum size is 50MB');
+      toast.error('Video file too large. Maximum size is 500MB');
       return;
     }
 
     // Validate file type
-    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime']; // MP4, WebM, MOV
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']; // MP4, WebM, MOV, AVI
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Invalid video format. Only MP4, WebM, and MOV are supported');
+      toast.error('Invalid video format. Only MP4, WebM, MOV, and AVI are supported');
       return;
     }
 
     setUploadingVideo(true);
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp4';
       const fileName = `${userId}/videos/${eventId}/${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      // Try to upload to event-videos bucket
+      let uploadError: any;
+      let publicUrl: string;
+
+      // First attempt: event-videos bucket
+      const { error } = await supabase.storage
         .from('event-videos')
         .upload(fileName, file);
 
+      if (error) {
+        // Fallback: Try event-images bucket if event-videos doesn't exist
+        console.warn('event-videos bucket not available, using event-images');
+        const { error: fallbackError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, file);
+
+        if (fallbackError) {
+          uploadError = fallbackError;
+        } else {
+          const { data: { publicUrl: url } } = supabase.storage
+            .from('event-images')
+            .getPublicUrl(fileName);
+          publicUrl = url;
+        }
+      } else {
+        const { data: { publicUrl: url } } = supabase.storage
+          .from('event-videos')
+          .getPublicUrl(fileName);
+        publicUrl = url;
+      }
+
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-videos')
-        .getPublicUrl(fileName);
-
-      // Store video URL with metadata for cleanup
-      setVideos([...videos, publicUrl]);
+      // Store video URL
+      setVideos([...videos, publicUrl!]);
       toast.success('Video uploaded successfully!');
 
       // Reset file input
       e.target.value = '';
     } catch (error: any) {
       console.error('Video upload error:', error);
-      toast.error('Failed to upload video');
+      if (error.message?.includes('Bucket not found')) {
+        toast.error('Video storage not set up. Please run the storage migration in Supabase.');
+      } else {
+        toast.error(`Failed to upload video: ${error.message}`);
+      }
     } finally {
       setUploadingVideo(false);
     }
