@@ -26,8 +26,10 @@ const CATEGORIES = [
 
 const PublicEvents = () => {
   const navigate = useNavigate();
+  const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [filteredToday, setFilteredToday] = useState<any[]>([]);
   const [filteredUpcoming, setFilteredUpcoming] = useState<any[]>([]);
   const [filteredPast, setFilteredPast] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,7 +37,7 @@ const PublicEvents = () => {
   const [priceFilter, setPriceFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('today'); // Default to Today
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -84,14 +86,33 @@ const PublicEvents = () => {
         .from('events')
         .select('id, title, description, event_date, venue, category, ticket_price, is_free, capacity, tickets_issued, image_url')
         .lt('event_date', todayStart.toISOString())
-        .gte('event_date', oneWeekAgo.toISOString())
-        .order('event_date', { ascending: false }); // Most recent past first
+        .order('event_date', { ascending: false }); // Show all past events, most recent first
 
       if (pastError) console.error('Error fetching past events:', pastError);
 
       if (upcoming) {
-        setUpcomingEvents(upcoming);
-        setFilteredUpcoming(upcoming);
+        // Separate Today from Future
+        const today: any[] = [];
+        const future: any[] = [];
+
+        upcoming.forEach(event => {
+          const eventDate = new Date(event.event_date);
+          if (eventDate.toDateString() === now.toDateString()) {
+            today.push(event);
+          } else {
+            future.push(event);
+          }
+        });
+
+        setTodayEvents(today);
+        setFilteredToday(today);
+        setUpcomingEvents(future);
+        setFilteredUpcoming(future);
+
+        // If no events today, default to upcoming tab
+        if (today.length === 0 && future.length > 0) {
+          setActiveTab('upcoming');
+        }
       }
 
       if (past) {
@@ -160,9 +181,10 @@ const PublicEvents = () => {
       return filtered;
     };
 
+    setFilteredToday(applyFilters(todayEvents));
     setFilteredUpcoming(applyFilters(upcomingEvents));
     setFilteredPast(applyFilters(pastEvents));
-  }, [upcomingEvents, pastEvents, searchQuery, selectedCategory, priceFilter, dateFilter, activeTab]);
+  }, [todayEvents, upcomingEvents, pastEvents, searchQuery, selectedCategory, priceFilter, dateFilter, activeTab]);
 
   const EventCard = ({ event, isPastEvent = false }: { event: any; isPastEvent?: boolean }) => {
     const isSaved = savedIds.includes(event.id);
@@ -373,8 +395,8 @@ const PublicEvents = () => {
               {/* Results Count & Clear */}
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span className="transition-all duration-300">
-                  {activeTab === 'upcoming' ? filteredUpcoming.length : filteredPast.length} event
-                  {(activeTab === 'upcoming' ? filteredUpcoming.length : filteredPast.length) !== 1 ? 's' : ''} found
+                  {activeTab === 'today' ? filteredToday.length : activeTab === 'upcoming' ? filteredUpcoming.length : filteredPast.length} event
+                  {(activeTab === 'today' ? filteredToday.length : activeTab === 'upcoming' ? filteredUpcoming.length : filteredPast.length) !== 1 ? 's' : ''} found
                 </span>
                 {(searchQuery || selectedCategory !== 'all' || priceFilter !== 'all' || dateFilter !== 'all') && (
                   <Button
@@ -398,16 +420,48 @@ const PublicEvents = () => {
 
         {/* Tabs for Upcoming and Past Events */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 animate-in slide-in-from-bottom-5 duration-700 delay-200">
-          <TabsList className="grid w-full md:w-auto grid-cols-2 backdrop-blur-md bg-background/50">
+          <TabsList className="grid w-full md:w-auto grid-cols-3 backdrop-blur-md bg-background/50">
+            <TabsTrigger value="today" className="transition-all duration-300">
+              <Calendar className="w-4 h-4 mr-2" />
+              Today ({todayEvents.length})
+            </TabsTrigger>
             <TabsTrigger value="upcoming" className="transition-all duration-300">
               <Sparkles className="w-4 h-4 mr-2" />
               Upcoming ({upcomingEvents.length})
             </TabsTrigger>
             <TabsTrigger value="past" className="transition-all duration-300">
               <Archive className="w-4 h-4 mr-2" />
-              Past Events ({pastEvents.length})
+              Past ({pastEvents.length})
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="today" className="space-y-6 animate-in fade-in-50 duration-500">
+            {filteredToday.length === 0 ? (
+              <Card className="animate-in zoom-in-95 duration-500">
+                <CardContent className="py-12 text-center">
+                  <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-pulse" />
+                  <p className="text-muted-foreground text-lg">
+                    {todayEvents.length === 0 ? "No events scheduled for today" : 'No events match your filters'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {todayEvents.length === 0 ? 'Check Upcoming events for future dates!' : 'Try adjusting your search or filters'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredToday.map((event, index) => (
+                  <div
+                    key={event.id}
+                    className="animate-in slide-in-from-bottom-8 duration-500"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <EventCard event={event} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="upcoming" className="space-y-6 animate-in fade-in-50 duration-500">
             {filteredUpcoming.length === 0 ? (
