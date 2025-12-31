@@ -53,9 +53,31 @@ export const PartyHeader = ({ title, subtitle }: { title: string; subtitle?: str
                     {subtitle}
                 </p>
             )}
-            {/* Party poppers */}
-            <div className="flex justify-center gap-2 mt-3 text-xl md:text-3xl animate-bounce">
-                🎊 🎉 🎊
+            {/* Party Decoration */}
+            <div className="flex justify-center items-center gap-4 mt-4">
+                <motion.div
+                    animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-primary drop-shadow-[0_0_8px_currentColor]"
+                >
+                    <Sparkles size={24} />
+                </motion.div>
+                <div className="h-px w-12 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                <motion.div
+                    animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                    className="text-accent drop-shadow-[0_0_8px_currentColor]"
+                >
+                    <Star size={24} />
+                </motion.div>
+                <div className="h-px w-12 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+                <motion.div
+                    animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                    className="text-primary drop-shadow-[0_0_8px_currentColor]"
+                >
+                    <Sparkles size={24} />
+                </motion.div>
             </div>
         </div>
     );
