@@ -4,7 +4,9 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { EventCustomization } from '@/components/EventCustomization';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TableManager } from '@/components/TableManager';
+import { ArrowLeft, Settings, Utensils } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUserFriendlyError } from '@/lib/errorHandler';
 
@@ -74,26 +76,45 @@ const EventCustomizationPage = () => {
           <p className="text-muted-foreground">{event.title}</p>
         </div>
 
-        <EventCustomization
-          eventId={eventId!}
-          userId={user?.id!}
-          isFreeEvent={event.is_free}
-          initialData={{
-            galleryImages: event.gallery_images || [],
-            videos: event.videos || [],
-            faq: event.faq || [],
-            schedule: event.schedule || [],
-            additionalInfo: event.additional_info || '',
-            socialLinks: event.social_links || {},
-            sponsors: event.sponsors || [],
-            upiId: event.upi_id || '',
-            paymentQrImageUrl: event.payment_qr_image_url || '',
-            discountPercent: event.discount_percent || 0,
-            event_date: event.event_date, // Pass event date for editing
-            coverImageUrl: event.image_url, // Pass cover image for editing
-            venue: event.venue // Pass venue for editing
-          }}
-        />
+        <Tabs defaultValue="customization" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="customization" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Event Customization
+            </TabsTrigger>
+            <TabsTrigger value="tables" className="flex items-center gap-2">
+              <Utensils className="w-4 h-4" />
+              Table Management
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="customization">
+            <EventCustomization
+              eventId={eventId!}
+              userId={user?.id!}
+              isFreeEvent={event.is_free}
+              initialData={{
+                galleryImages: event.gallery_images || [],
+                videos: event.videos || [],
+                faq: event.faq || [],
+                schedule: event.schedule || [],
+                additionalInfo: event.additional_info || '',
+                socialLinks: event.social_links || {},
+                sponsors: event.sponsors || [],
+                upiId: event.upi_id || '',
+                paymentQrImageUrl: event.payment_qr_image_url || '',
+                discountPercent: event.discount_percent || 0,
+                event_date: event.event_date,
+                coverImageUrl: event.image_url,
+                venue: event.venue
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="tables">
+            <TableManager eventId={eventId!} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
