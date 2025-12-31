@@ -617,6 +617,7 @@ const PublicEvent = () => {
               <img
                 src={event.image_url}
                 alt={event.title}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
@@ -685,32 +686,30 @@ const PublicEvent = () => {
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{event.description}</p>
             )}
 
-            {/* Event Video Section */}
+            {/* Event Video Section - Optimized for Performance */}
             {event.videos && event.videos.length > 0 && (
               <div className="my-6">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Video className="w-5 h-5 text-primary" />
                   Event Preview
                 </h3>
-                <div className="rounded-xl overflow-hidden border-2 border-primary/20 bg-black/20 backdrop-blur-sm">
+                <div className="rounded-xl overflow-hidden border-2 border-primary/20 bg-black/10 backdrop-blur-sm shadow-lg">
                   <video
                     src={event.videos[0]}
                     controls
-                    className="w-full max-h-[400px] object-contain"
+                    playsInline
+                    className="w-full max-h-[400px] object-contain bg-black"
                     poster={event.image_url}
-                    preload="metadata"
-                    onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
-                    onMouseLeave={(e) => {
-                      const video = e.target as HTMLVideoElement;
-                      video.pause();
-                      video.currentTime = 0;
-                    }}
+                    preload="none"
+                    loading="lazy"
                   >
+                    <source src={event.videos[0]} type="video/mp4" />
+                    <source src={event.videos[0]} type="video/webm" />
                     Your browser does not support video playback.
                   </video>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  ✨ Hover to preview | Click controls to watch full video
+                  🎬 Click play to watch the event preview
                 </p>
               </div>
             )}
