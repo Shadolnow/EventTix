@@ -1,9 +1,8 @@
+import React from 'react';
 import confetti from 'canvas-confetti';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Palette,
-    Wine,
-    Cocktail,
     GlassWater,
     Beer,
     Music,
@@ -182,19 +181,19 @@ export const PartyCard = ({ children, className = '' }: { children: React.ReactN
 // Floating sophisticated party elements
 export const FloatingPartyElements = () => {
     const assets = [
-        { icon: Palette, color: 'text-pink-400', glow: 'shadow-pink-500/50' },
-        { icon: Brush, color: 'text-blue-400', glow: 'shadow-blue-500/50' },
-        { icon: Wine, color: 'text-red-400', glow: 'shadow-red-500/50' },
-        { icon: Cocktail, color: 'text-orange-400', glow: 'shadow-orange-500/50' },
-        { icon: GlassWater, color: 'text-sky-400', glow: 'shadow-sky-500/50' },
-        { icon: Beer, color: 'text-yellow-400', glow: 'shadow-yellow-500/50' },
-        { icon: Music, color: 'text-purple-400', glow: 'shadow-purple-500/50' },
-        { icon: Sparkles, color: 'text-amber-400', glow: 'shadow-amber-500/50' },
-        { icon: PartyPopper, color: 'text-emerald-400', glow: 'shadow-emerald-500/50' },
-        { icon: Star, color: 'text-yellow-300', glow: 'shadow-yellow-400/50' },
-        { icon: Camera, color: 'text-violet-400', glow: 'shadow-violet-500/50' },
-        { icon: Utensils, color: 'text-rose-400', glow: 'shadow-rose-500/50' },
-        { icon: Ticket, color: 'text-indigo-400', glow: 'shadow-indigo-500/50' },
+        { icon: Music, color: 'text-pink-400' },
+        { icon: Star, color: 'text-blue-400' },
+        { icon: Sparkles, color: 'text-red-400' },
+        { icon: Music, color: 'text-orange-400' },
+        { icon: GlassWater, color: 'text-sky-400' },
+        { icon: Beer, color: 'text-yellow-400' },
+        { icon: Music, color: 'text-purple-400' },
+        { icon: Sparkles, color: 'text-amber-400' },
+        { icon: PartyPopper, color: 'text-emerald-400' },
+        { icon: Star, color: 'text-yellow-300' },
+        { icon: Camera, color: 'text-violet-400' },
+        { icon: Utensils, color: 'text-rose-400' },
+        { icon: Ticket, color: 'text-indigo-400' },
     ];
 
     // Create a larger pool for better density in margins
