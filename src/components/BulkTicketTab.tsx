@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, ShoppingCart, Trash2, Copy, ArrowLeft, Download, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/safeClient';
 import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
+import { celebrateBulkBooking } from '@/utils/celebrationEffects';
 import { TicketCard } from './TicketCard';
 import { HelpDialog } from './HelpDialog';
 
@@ -218,16 +218,11 @@ export const BulkTicketTab = ({ eventId, event, onSuccess }: BulkTicketTabProps)
                 // Don't show email status - focus on ticket creation
             });
 
-            // Success!
+            // Success with celebration!
             toast.success(`🎉 ${finalTickets.length} tickets created successfully!`);
 
-            // Confetti
-            confetti({
-                particleCount: 200,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#00E5FF', '#B400FF', '#FFFFFF']
-            });
+            // CELEBRATION: Confetti + Clapping Sound!
+            celebrateBulkBooking(finalTickets.length);
 
             // IMPORTANT: Display customer's chosen Security PIN
             toast.success(`🔒 Your Security PIN: ${securityPin}`, {

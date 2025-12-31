@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HelpDialog } from '@/components/HelpDialog';
 import { HowItWorks } from '@/components/HowItWorks';
 import { PartyBackground, PartyHeader, PartyCard, PartyButton } from '@/components/PartyElements';
+import { celebrateTicketBookingQuick } from '@/utils/celebrationEffects';
 
 interface SelectedTier {
   id: string;
@@ -514,6 +515,9 @@ const PublicEvent = () => {
         startVelocity: 45,
         colors: ['#00E5FF', '#B400FF', '#FFFFFF']
       });
+
+      // Celebration with confetti and clapping!
+      celebrateTicketBookingQuick();
 
       // Success message based on type
       const successMsg = event.is_free
