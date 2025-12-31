@@ -685,6 +685,36 @@ const PublicEvent = () => {
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{event.description}</p>
             )}
 
+            {/* Event Video Section */}
+            {event.videos && event.videos.length > 0 && (
+              <div className="my-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Video className="w-5 h-5 text-primary" />
+                  Event Preview
+                </h3>
+                <div className="rounded-xl overflow-hidden border-2 border-primary/20 bg-black/20 backdrop-blur-sm">
+                  <video
+                    src={event.videos[0]}
+                    controls
+                    className="w-full max-h-[400px] object-contain"
+                    poster={event.image_url}
+                    preload="metadata"
+                    onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                    onMouseLeave={(e) => {
+                      const video = e.target as HTMLVideoElement;
+                      video.pause();
+                      video.currentTime = 0;
+                    }}
+                  >
+                    Your browser does not support video playback.
+                  </video>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  ✨ Hover to preview | Click controls to watch full video
+                </p>
+              </div>
+            )}
+
             {event.promotion_text && (
               <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 rounded-lg p-4">
                 <p className="text-primary font-semibold flex items-center gap-2">
