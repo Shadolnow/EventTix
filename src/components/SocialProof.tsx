@@ -64,8 +64,8 @@ export const SocialProofBanner = ({ eventId, capacity, ticketsIssued = 0 }: Soci
             {/* Limited Availability Warning */}
             {isLowStock && (
                 <div className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg ${isVeryLowStock
-                        ? 'bg-red-500/20 border border-red-500/40 animate-pulse'
-                        : 'bg-yellow-500/10 border border-yellow-500/30'
+                    ? 'bg-red-500/20 border border-red-500/40 animate-pulse'
+                    : 'bg-yellow-500/10 border border-yellow-500/30'
                     }`}>
                     <AlertTriangle className={`w-5 h-5 ${isVeryLowStock ? 'text-red-400' : 'text-yellow-400'}`} />
                     <span className={`text-sm font-bold ${isVeryLowStock ? 'text-red-400' : 'text-yellow-400'}`}>
@@ -186,3 +186,225 @@ export const AvailabilityIndicator = ({ available, total, tierName }: Availabili
         </div>
     );
 };
+
+// === NEW REAL-TIME SOCIAL PROOF COMPONENTS ===
+
+interface LiveViewCounterProps {
+    eventId: string;
+}
+
+export const LiveViewCounter = ({ eventId }: LiveViewCounterProps) => {
+    const [viewCount, setViewCount] = useState(0);
+    const [isLive, setIsLive] = useState(false);
+
+    useEffect(() => {
+        // Increment view count when component mounts
+        const incrementViews = async () => {
+            try {
+                const { data, error } = await supabase.rpc('increment_event_views', {
+                    p_event_id: eventId
+                });
+
+                if (!error && data) {
+                    setViewCount(data);
+                }
+            } catch (err) {
+                console.error('View tracking error:', err);
+            }
+        };
+
+        incrementViews();
+
+        // Subscribe to real-time updates
+        const channel = supabase
+            .channel(`event_views_${eventId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'event_views',
+                    filter: `event_id=eq.${eventId}`
+                },
+                (payload) => {
+                    if (payload.new && 'viewer_count' in payload.new) {
+                        setViewCount((payload.new as any).viewer_count);
+                        setIsLive(true);
+                        setTimeout(() => setIsLive(false), 2000);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [eventId]);
+
+    if (viewCount === 0) return null;
+
+    return (
+        <Badge
+            variant="secondary"
+            className={`flex items-center gap-2 px-3 py-1.5 transition-all ${isLive ? 'bg-green-500/20 text-green-400 animate-pulse' : ''
+                }`}
+        >
+            <Users className="w-4 h-4" />
+            <span className="font-semibold">{viewCount}</span>
+            <span className="text-xs opacity-80">viewing now</span>
+        </Badge>
+    );
+};
+
+interface RecentBooking {
+    id: string;
+    attendee_name: string;
+    attendee_location?: string;
+    ticket_count: number;
+    created_at: string;
+}
+
+interface RecentBookingsTickerProps {
+    eventId: string;
+}
+
+export const RecentBookingsTicker = ({ eventId }: RecentBookingsTickerProps) => {
+    const [bookings, setBookings] = useState<RecentBooking[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        const fetchBookings = async () => {
+            const { data, error } = await supabase
+                .from('recent_bookings_feed')
+                .select('*')
+                .eq('event_id', eventId)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (data && !error) {
+                setBookings(data);
+            }
+        };
+
+        fetchBookings();
+
+        const channel = supabase
+            .channel(`bookings_${eventId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'recent_bookings_feed',
+                    filter: `event_id=eq.${eventId}`
+                },
+                (payload) => {
+                    setBookings(prev => [payload.new as RecentBooking, ...prev].slice(0, 10));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [eventId]);
+
+    useEffect(() => {
+        if (bookings.length === 0) return;
+        const interval = setInterval(() => {
+            setCurrentIndex(prev => (prev + 1) % bookings.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [bookings.length]);
+
+    if (bookings.length === 0) return null;
+
+    const current = bookings[currentIndex];
+    const timeAgo = getTimeAgo(current.created_at);
+
+    return (
+        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg animate-in slide-in-from-left">
+            <Users className="w-4 h-4 text-primary" />
+            <p className="text-sm">
+                <span className="font-semibold">{current.attendee_name.split(' ')[0]}</span>
+                {current.attendee_location && (
+                    <span className="text-muted-foreground"> from {current.attendee_location}</span>
+                )}
+                <span className="text-muted-foreground"> just booked</span>
+                {current.ticket_count > 1 && (
+                    <span className="font-semibold text-primary"> {current.ticket_count} tickets</span>
+                )}
+                <span className="text-xs text-muted-foreground ml-2">• {timeAgo}</span>
+            </p>
+        </div>
+    );
+};
+
+interface BookingStatsProps {
+    eventId: string;
+}
+
+export const BookingStats = ({ eventId }: BookingStatsProps) => {
+    const [stats, setStats] = useState({
+        last24h: 0,
+        lastHour: 0,
+        trending: false
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            const now = new Date();
+            const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+
+            const { data: tickets } = await supabase
+                .from('tickets')
+                .select('created_at')
+                .eq('event_id', eventId)
+                .gte('created_at', last24h.toISOString());
+
+            if (tickets) {
+                const last24hCount = tickets.length;
+                const lastHourCount = tickets.filter(
+                    t => new Date(t.created_at) >= lastHour
+                ).length;
+
+                setStats({
+                    last24h: last24hCount,
+                    lastHour: lastHourCount,
+                    trending: lastHourCount > 5
+                });
+            }
+        };
+
+        fetchStats();
+        const interval = setInterval(fetchStats, 60000);
+        return () => clearInterval(interval);
+    }, [eventId]);
+
+    return (
+        <div className="flex items-center gap-4">
+            {stats.trending && (
+                <Badge variant="destructive" className="flex items-center gap-1 animate-pulse">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>Trending</span>
+                </Badge>
+            )}
+
+            {stats.lastHour > 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>{stats.lastHour} sold in last hour</span>
+                </div>
+            )}
+        </div>
+    );
+};
+
+function getTimeAgo(timestamp: string): string {
+    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
